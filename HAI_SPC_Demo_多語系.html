@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HAI Surveillance · Demo</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#12303a; --teal:#0e5666; --teal2:#12768c; --teal-soft:#e6eef0;
+  --sage:#2f9e8f; --sage-soft:#e4f3f0; --coral:#d9503c; --coral-soft:#fbe9e5;
+  --amber:#cf8a2e; --amber-soft:#f8efdc; --violet:#7a5aa6;
+  --paper:#eceff1; --card:#ffffff; --line:#d7e0e2; --line2:#e8eded;
+  --muted:#5f727a; --muted2:#86959c;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Inter","Noto Sans","PingFang TC","Microsoft JhengHei","Hiragino Sans","Yu Gothic","Malgun Gothic","Noto Sans CJK TC",system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(18,118,140,.10), transparent 60%),
+    var(--paper);
+  color:var(--ink); min-height:100vh; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+:lang(ja),:lang(ko){letter-spacing:0;}
+a{color:inherit;}
+
+/* ===== Header ===== */
+.hdr{
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(120deg,#0b4551 0%, #0e5666 55%, #12768c 100%);
+  color:#eaf5f6; border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 6px 22px rgba(9,45,55,.18);
+}
+.hdr-inner{max-width:1180px; margin:0 auto; padding:14px 22px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+.brand{display:flex; align-items:center; gap:13px; min-width:0;}
+.brand .glyph{
+  width:42px;height:42px;border-radius:11px;flex-shrink:0;
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+  display:flex;align-items:center;justify-content:center;font-size:1.15rem;
+}
+.brand h1{font-size:1.06rem; margin:0; font-weight:650; letter-spacing:.2px; line-height:1.25;}
+.brand .sub{font-size:.72rem; opacity:.82; margin-top:2px; letter-spacing:.3px;}
+.hdr-right{margin-left:auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.demo-pill{
+  font-size:.68rem; font-weight:600; letter-spacing:.4px; text-transform:uppercase;
+  background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.28);
+  padding:5px 11px; border-radius:999px; white-space:nowrap;
+}
+.demo-pill i{margin-right:5px; opacity:.85;}
+.langbar{display:flex; gap:3px; background:rgba(0,0,0,.16); padding:3px; border-radius:10px;}
+.langbar button{
+  border:0; background:transparent; color:#d6ebee; cursor:pointer;
+  font-size:.78rem; font-weight:600; padding:5px 11px; border-radius:7px;
+  font-family:inherit; transition:all .15s; letter-spacing:.2px;
+}
+.langbar button:hover{background:rgba(255,255,255,.10);}
+.langbar button.on{background:#eaf5f6; color:#0e5666;}
+
+/* ===== Nav ===== */
+.nav{background:var(--card); border-bottom:1px solid var(--line);
+  position:sticky; top:71px; z-index:40;}
+.nav-inner{max-width:1180px; margin:0 auto; padding:0 22px; display:flex; gap:2px; overflow-x:auto;}
+.nav button{
+  border:0; background:transparent; cursor:pointer; font-family:inherit;
+  padding:14px 18px; font-size:.9rem; color:var(--muted); font-weight:550;
+  border-bottom:3px solid transparent; white-space:nowrap; transition:color .15s;
+  display:flex; align-items:center; gap:8px;
+}
+.nav button i{font-size:.92rem;}
+.nav button:hover{color:var(--teal);}
+.nav button.on{color:var(--teal); border-bottom-color:var(--teal); font-weight:650;}
+
+/* ===== Layout ===== */
+.wrap{max-width:1180px; margin:0 auto; padding:26px 22px 60px;}
+.page{display:none; animation:fade .35s ease;}
+.page.on{display:block;}
+@keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+.section-eyebrow{font-size:.72rem; font-weight:700; letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--teal2);}
+.section-h{font-size:1.32rem; font-weight:680; margin:5px 0 3px; letter-spacing:.2px;}
+.section-lead{color:var(--muted); font-size:.92rem; max-width:70ch;}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:15px;
+  box-shadow:0 1px 3px rgba(18,48,58,.05);}
+.pad{padding:20px 22px;}
+.card-h{font-size:.96rem; font-weight:650; color:var(--ink); margin:0 0 14px;
+  display:flex; align-items:center; gap:9px;}
+.card-h i{color:var(--teal2); font-size:.98rem;}
+.card-h .note{margin-left:auto; font-size:.72rem; font-weight:500; color:var(--muted);}
+
+.grid{display:grid; gap:16px;}
+.g-2{grid-template-columns:1fr 1fr;}
+.g-3{grid-template-columns:repeat(3,1fr);}
+
+/* ===== Hero (overview) ===== */
+.hero{position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#0d4c5a 0%, #0e5666 60%, #0b4551 100%);
+  color:#eaf6f7; border-radius:18px; padding:34px 34px 30px; margin-bottom:22px;
+  border:1px solid rgba(255,255,255,.06);}
+.hero::after{content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(520px 300px at 100% 0%, rgba(47,158,143,.22), transparent 62%),
+    radial-gradient(420px 260px at 0% 110%, rgba(18,118,140,.30), transparent 60%);}
+.hero-grid{position:relative; z-index:1; display:grid; grid-template-columns:1.35fr 1fr; gap:30px; align-items:center;}
+.hero .eyebrow{font-size:.72rem; letter-spacing:2px; text-transform:uppercase;
+  color:#8fd6cb; font-weight:700;}
+.hero h2{font-size:1.62rem; line-height:1.28; margin:10px 0 12px; font-weight:680; letter-spacing:.2px;}
+.hero p{font-size:.92rem; color:#c7e2e4; max-width:52ch; margin:0;}
+.hero-chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px;}
+.hero-chip{font-size:.74rem; font-weight:600; background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.20); border-radius:999px; padding:6px 13px; color:#e7f4f5;}
+.hero-chip i{margin-right:6px; color:#8fd6cb;}
+/* monitor mini in hero */
+.monitor{background:rgba(6,32,39,.55); border:1px solid rgba(255,255,255,.14);
+  border-radius:14px; padding:16px 18px; backdrop-filter:blur(2px);}
+.monitor .m-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.monitor .m-label{font-size:.72rem; letter-spacing:1px; text-transform:uppercase; color:#9fd3cc; font-weight:700;}
+.status-pill{display:inline-flex; align-items:center; gap:7px; font-size:.74rem; font-weight:700;
+  padding:5px 12px; border-radius:999px; background:rgba(47,158,143,.20);
+  color:#7fe3d3; border:1px solid rgba(47,158,143,.45);}
+.status-pill .dot{width:8px;height:8px;border-radius:50%; background:#57e0cd;
+  box-shadow:0 0 0 0 rgba(87,224,205,.6); animation:pulse 2.2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(87,224,205,.55);}
+  70%{box-shadow:0 0 0 9px rgba(87,224,205,0);} 100%{box-shadow:0 0 0 0 rgba(87,224,205,0);}}
+.monitor .sparkwrap{position:relative; height:74px;}
+.monitor .m-foot{display:flex; justify-content:space-between; margin-top:10px;
+  font-size:.7rem; color:#9fd3cc;}
+.monitor .m-foot b{color:#eaf6f7; font-weight:650;}
+
+/* ===== KPI ===== */
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:6px;}
+.kpi{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 17px;
+  position:relative; overflow:hidden;}
+.kpi::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--teal2);}
+.kpi.k-sage::before{background:var(--sage);}
+.kpi.k-coral::before{background:var(--coral);}
+.kpi.k-violet::before{background:var(--violet);}
+.kpi.k-amber::before{background:var(--amber);}
+.kpi .k-top{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.74rem; font-weight:600;}
+.kpi .k-top i{color:var(--teal2); font-size:.85rem;}
+.kpi.k-sage .k-top i{color:var(--sage);} .kpi.k-coral .k-top i{color:var(--coral);}
+.kpi.k-violet .k-top i{color:var(--violet);} .kpi.k-amber .k-top i{color:var(--amber);}
+.kpi .k-val{font-size:1.78rem; font-weight:720; letter-spacing:.3px; margin-top:7px; line-height:1;
+  font-variant-numeric:tabular-nums;}
+.kpi .k-val small{font-size:.82rem; font-weight:600; color:var(--muted); margin-left:3px;}
+.kpi .k-sub{font-size:.7rem; color:var(--muted); margin-top:5px;}
+
+/* ===== SPC monitor panel ===== */
+.spc{border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--card);}
+.spc-head{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:15px 20px; background:linear-gradient(120deg,#0d4c5a,#0e5666);
+  color:#eaf6f7;}
+.spc-head .t{font-weight:650; font-size:.98rem; display:flex; align-items:center; gap:9px;}
+.spc-head .t i{color:#8fd6cb;}
+.spc-verdict{margin-left:auto; display:inline-flex; align-items:center; gap:8px;
+  font-size:.76rem; font-weight:700; padding:6px 13px; border-radius:999px;
+  background:rgba(47,158,143,.20); color:#8fe6d7; border:1px solid rgba(47,158,143,.45);}
+.spc-verdict .dot{width:8px;height:8px;border-radius:50%;background:#57e0cd; animation:pulse 2.2s infinite;}
+.spc-verdict.warn{background:rgba(217,138,46,.18); color:#f0c987; border-color:rgba(217,138,46,.5);}
+.spc-verdict.warn .dot{background:#e6a94a; animation:none;}
+.spc-body{padding:18px 20px 6px;}
+.spc-charts{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+.spc-charts .ct{font-size:.8rem; font-weight:650; text-align:center; margin-bottom:2px; color:var(--ink);}
+.spc-charts .ct span{display:block; font-size:.68rem; font-weight:500; color:var(--muted);}
+.chartbox{position:relative; height:210px;}
+.spc-legend{display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+  font-size:.72rem; color:var(--muted); padding:12px 0 4px; border-top:1px solid var(--line2); margin-top:8px;}
+.spc-legend span{display:inline-flex; align-items:center; gap:6px;}
+.lg-line{width:16px; height:0; border-top:2px solid; display:inline-block;}
+.lg-dash{width:16px; height:0; border-top:2px dashed; display:inline-block;}
+.lg-dot{width:9px;height:9px;border-radius:50%; display:inline-block;}
+.nelson{margin-top:12px; padding:13px 16px; border-radius:12px; background:var(--teal-soft);
+  border:1px solid #cfe0e3; font-size:.8rem; color:#274b53; line-height:1.6;}
+.nelson b{color:var(--teal);}
+.nelson .ok{color:var(--sage); font-weight:650;}
+
+/* ===== Alerts ===== */
+.alert-empty{display:flex; align-items:center; gap:10px; color:var(--sage);
+  font-size:.86rem; font-weight:600; background:var(--sage-soft); border:1px solid #bfe4dc;
+  border-radius:12px; padding:13px 16px;}
+.alert{display:flex; gap:11px; border-radius:12px; padding:12px 15px; margin-bottom:9px;
+  border-left:4px solid; align-items:flex-start;}
+.alert.warn{background:var(--amber-soft); border-color:var(--amber);}
+.alert.danger{background:var(--coral-soft); border-color:var(--coral);}
+.alert i{margin-top:2px;}
+.alert.warn i{color:var(--amber);} .alert.danger i{color:var(--coral);}
+.alert .a-t{font-size:.82rem; font-weight:650;}
+.alert .a-m{font-size:.78rem; color:#4a5b62; line-height:1.5;}
+
+/* ===== Tables ===== */
+.tbl{width:100%; border-collapse:collapse; font-size:.82rem;}
+.tbl th{background:#f3f7f8; color:var(--muted); text-align:left; font-weight:600;
+  padding:9px 11px; border-bottom:1px solid var(--line); white-space:nowrap; font-size:.76rem;}
+.tbl td{padding:9px 11px; border-bottom:1px solid var(--line2);}
+.tbl tr:last-child td{border-bottom:0;}
+.tbl .num{text-align:right; font-variant-numeric:tabular-nums;}
+.tbl .ctr{text-align:center;}
+.tbl tr.sum{background:#f3f7f8; font-weight:650;}
+.tbl tr.total td{background:var(--teal); color:#eaf6f7; font-weight:700;}
+.bar-cell{position:relative;}
+.bar-cell .bar{position:absolute; left:0; top:0; bottom:0; background:rgba(18,118,140,.10); z-index:0;}
+.bar-cell span{position:relative; z-index:1;}
+
+/* ===== Adjudication wizard ===== */
+.steps{display:flex; align-items:center; justify-content:center; gap:0; margin:6px 0 22px; flex-wrap:wrap;}
+.step{display:flex; flex-direction:column; align-items:center; position:relative;}
+.step .circle{width:34px;height:34px;border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-weight:650; font-size:.82rem; background:#cdd8db; color:#fff; transition:all .25s;}
+.step.active .circle{background:var(--teal2); box-shadow:0 0 0 4px rgba(18,118,140,.16);}
+.step.done .circle{background:var(--sage);}
+.step .lbl{font-size:.68rem; color:var(--muted); margin-top:6px; max-width:78px; text-align:center; line-height:1.25;}
+.step.active .lbl{color:var(--teal2); font-weight:650;}
+.step-line{width:44px; height:3px; background:#cdd8db; margin:0 4px 18px; border-radius:2px;}
+.step-line.done{background:var(--sage);}
+
+.field label{font-size:.8rem; font-weight:600; display:block; margin-bottom:5px;}
+.field label .req{color:var(--coral); margin-left:2px;}
+.ctrl{width:100%; padding:9px 12px; border:1.5px solid var(--line); border-radius:9px;
+  font-size:.88rem; font-family:inherit; background:#fff; outline:none; transition:border-color .15s;}
+.ctrl:focus{border-color:var(--teal2); box-shadow:0 0 0 3px rgba(18,118,140,.10);}
+.form-2{display:grid; grid-template-columns:1fr 1fr; gap:15px;}
+
+.resident-card{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px;}
+.rc{background:#f5f8f9; border-radius:10px; padding:10px 13px; border-left:3px solid var(--teal2);}
+.rc .rl{font-size:.68rem; color:var(--muted);}
+.rc .rv{font-size:.86rem; font-weight:650; margin-top:2px;}
+
+.site-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+.site{border:2px solid var(--line); border-radius:13px; padding:16px 12px; text-align:center;
+  cursor:pointer; transition:all .18s; background:#fff; position:relative;}
+.site:hover{border-color:var(--teal2); background:#f5fafb; transform:translateY(-2px);}
+.site.sel{border-color:var(--teal); background:var(--teal-soft); box-shadow:0 0 0 3px rgba(14,86,102,.10);}
+.site.disabled{opacity:.5; cursor:not-allowed;}
+.site.disabled:hover{transform:none; border-color:var(--line); background:#fff;}
+.site .ic{font-size:1.6rem; margin-bottom:8px;}
+.site .nm{font-size:.82rem; font-weight:650; line-height:1.25;}
+.site .cd{font-size:.68rem; color:var(--muted); margin-top:4px;}
+.site .demo-tag{position:absolute; top:7px; right:8px; font-size:.58rem; font-weight:700;
+  color:var(--teal2); background:var(--teal-soft); padding:2px 6px; border-radius:5px;}
+
+.logic-badge{display:inline-flex; align-items:center; gap:6px; font-size:.7rem; font-weight:700;
+  padding:4px 10px; border-radius:999px; letter-spacing:.3px;}
+.lb-threshold{background:#e5eef7; color:#2c5f92;}
+.lb-single{background:var(--sage-soft); color:#1f7a6d;}
+.lb-combo{background:#efe8f6; color:#6a4b95;}
+.lb-exclusion{background:var(--amber-soft); color:#9a6a1e;}
+
+.criteria{background:#f7fafb; border:1px solid #e0eaec; border-radius:13px; padding:17px 18px; margin-top:14px;}
+.criteria h4{font-size:.9rem; margin:0 0 3px; color:var(--teal);}
+.criteria .hint{font-size:.78rem; color:var(--muted); margin-bottom:12px;}
+.gate{background:var(--amber-soft); border:1px solid #ecd9ad; border-radius:11px; padding:14px 16px; margin-bottom:14px;}
+.gate .q{font-size:.85rem; font-weight:650; color:#8a5f1a; margin-bottom:10px;}
+.radios{display:flex; gap:20px;}
+.radios label{display:flex; align-items:center; gap:7px; cursor:pointer; font-size:.86rem; font-weight:500;}
+.radios input{accent-color:var(--teal); width:17px;height:17px; cursor:pointer;}
+.check{display:flex; align-items:flex-start; gap:11px; padding:9px 12px; border-radius:9px;
+  cursor:pointer; transition:background .12s; margin-bottom:3px;}
+.check:hover{background:#eef4f5;}
+.check input{margin-top:2px; width:18px;height:18px; accent-color:var(--teal); flex-shrink:0; cursor:pointer;}
+.check label{font-size:.85rem; line-height:1.45; cursor:pointer; flex:1;}
+.exclusion-box{margin-top:12px; background:var(--amber-soft); border:1px dashed #d9b978; border-radius:10px; padding:10px 13px;}
+
+.verdict{margin-top:16px; border-radius:12px; padding:15px 18px; display:flex; gap:12px; align-items:flex-start;}
+.verdict.pass{background:var(--sage-soft); border:1px solid #b6e2da; color:#1c6d61;}
+.verdict.fail{background:var(--amber-soft); border:1px solid #ecd6a6; color:#8a6318;}
+.verdict i{font-size:1.3rem; margin-top:1px;}
+.verdict .vt{font-weight:700; font-size:.92rem;}
+.verdict .vm{font-size:.82rem; margin-top:3px; opacity:.92;}
+
+.measures{margin-top:16px; background:#fff; border:1px solid var(--line); border-radius:13px; overflow:hidden;}
+.measures .mh{background:var(--teal-soft); padding:11px 16px; font-size:.85rem; font-weight:650; color:var(--teal);
+  display:flex; align-items:center; gap:8px;}
+.measures ul{margin:0; padding:12px 18px 14px 34px;}
+.measures li{font-size:.83rem; line-height:1.6; margin-bottom:6px; color:#33474e;}
+
+.btnrow{display:flex; justify-content:space-between; margin-top:22px; gap:12px;}
+.btn{border:0; cursor:pointer; font-family:inherit; font-weight:650; font-size:.9rem;
+  padding:11px 26px; border-radius:10px; transition:all .15s; display:inline-flex; align-items:center; gap:8px;}
+.btn-prev{background:#eaeff1; color:var(--ink);} .btn-prev:hover{background:#dde5e7;}
+.btn-next{background:var(--teal); color:#fff;} .btn-next:hover{background:var(--teal2);}
+.btn-next:disabled{background:#b6c4c8; cursor:not-allowed;}
+.btn-run{background:var(--sage); color:#fff;} .btn-run:hover{background:#278a7c;}
+.btn-ghost{background:transparent; color:var(--teal); border:1.5px solid var(--teal);}
+.btn-ghost:hover{background:var(--teal-soft);}
+
+/* ===== Rule logic page ===== */
+.logic-cards{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+.logic-card{border:1px solid var(--line); border-radius:14px; padding:18px 20px; background:#fff; position:relative;}
+.logic-card::before{content:""; position:absolute; left:0; top:16px; bottom:16px; width:4px; border-radius:3px;}
+.logic-card.t-threshold::before{background:#2c5f92;} .logic-card.t-single::before{background:var(--sage);}
+.logic-card.t-combo::before{background:var(--violet);} .logic-card.t-exclusion::before{background:var(--amber);}
+.logic-card .lc-h{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+.logic-card .lc-num{font-size:1.4rem; font-weight:750; color:var(--line); font-variant-numeric:tabular-nums;}
+.logic-card .lc-t{font-size:1rem; font-weight:680;}
+.logic-card .lc-d{font-size:.85rem; color:var(--muted); line-height:1.6;}
+.logic-card .lc-ex{margin-top:11px; font-size:.8rem; background:#f6fafb; border:1px solid var(--line2);
+  border-radius:9px; padding:10px 13px; color:#3a4d54;}
+.logic-card .lc-ex b{color:var(--teal);}
+.formula{font-family:"SF Mono",ui-monospace,"Cascadia Code",Consolas,monospace; font-size:.78rem;
+  background:#0d3540; color:#a8e0d6; padding:3px 8px; border-radius:6px; display:inline-block; margin-top:6px;}
+
+.matrix-note{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center;
+  background:linear-gradient(120deg,#0d4c5a,#0e5666); color:#eaf6f7; border-radius:15px; padding:22px 24px; margin-top:4px;}
+.matrix-num{font-size:2.6rem; font-weight:760; letter-spacing:1px; line-height:1;}
+.matrix-num small{display:block; font-size:.72rem; font-weight:600; color:#9fd3cc; letter-spacing:1px; margin-top:6px; text-transform:uppercase;}
+.matrix-desc{font-size:.9rem; color:#cbe4e6; line-height:1.65; max-width:60ch;}
+
+.pipeline{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:4px;}
+.pipe{background:#fff; border:1px solid var(--line); border-radius:12px; padding:15px 16px; position:relative;}
+.pipe .pn{font-size:.68rem; font-weight:700; color:var(--teal2); letter-spacing:1px;}
+.pipe .pt{font-size:.88rem; font-weight:650; margin:6px 0 4px;}
+.pipe .pd{font-size:.77rem; color:var(--muted); line-height:1.5;}
+.pipe .pms{position:absolute; right:12px; top:14px; font-size:.66rem; font-weight:700; color:var(--sage);
+  background:var(--sage-soft); padding:2px 7px; border-radius:6px;}
+
+.deident{display:flex; gap:12px; align-items:flex-start; background:#fff; border:1px dashed var(--line);
+  border-radius:12px; padding:14px 17px; margin-top:22px; font-size:.8rem; color:var(--muted); line-height:1.6;}
+.deident i{color:var(--teal2); font-size:1.05rem; margin-top:2px;}
+
+.footer{text-align:center; color:var(--muted); font-size:.75rem; padding:26px 0 6px; line-height:1.7;}
+.footer b{color:var(--ink);}
+
+/* ===== Responsive ===== */
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;} .kpis{grid-template-columns:repeat(2,1fr);}
+  .spc-charts{grid-template-columns:1fr;} .g-2,.g-3{grid-template-columns:1fr;}
+  .logic-cards{grid-template-columns:1fr;} .pipeline{grid-template-columns:1fr 1fr;}
+  .resident-card{grid-template-columns:1fr 1fr;} .form-2{grid-template-columns:1fr;}
+  .matrix-note{grid-template-columns:1fr; text-align:center;}
+}
+@media(max-width:560px){
+  .brand h1{font-size:.95rem;} .kpis{grid-template-columns:1fr 1fr;}
+  .step-line{width:20px;} .step .lbl{font-size:.6rem;}
+  .pipeline{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="brand">
+      <div class="glyph"><i class="fas fa-shield-virus"></i></div>
+      <div>
+        <h1 data-i18n="app_title">HAI Surveillance System</h1>
+        <div class="sub" data-i18n="app_sub">Rule-Based AI × Statistical Process Control</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <span class="demo-pill"><i class="fas fa-flask"></i><span data-i18n="demo_badge">Demo · De-identified</span></span>
+      <div class="langbar" id="langbar">
+        <button data-lang="en" class="on">EN</button>
+        <button data-lang="zh">中文</button>
+        <button data-lang="ja">日本語</button>
+        <button data-lang="ko">한국어</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Nav ===== -->
+<nav class="nav">
+  <div class="nav-inner" id="nav">
+    <button data-tab="overview" class="on"><i class="fas fa-compass"></i><span data-i18n="nav_overview">Overview</span></button>
+    <button data-tab="dashboard"><i class="fas fa-wave-square"></i><span data-i18n="nav_dashboard">Surveillance Dashboard</span></button>
+    <button data-tab="adjudication"><i class="fas fa-clipboard-check"></i><span data-i18n="nav_adjudication">Case Adjudication</span></button>
+    <button data-tab="rules"><i class="fas fa-diagram-project"></i><span data-i18n="nav_rules">Rule Logic</span></button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ================= OVERVIEW ================= -->
+<section class="page on" id="page-overview">
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow" data-i18n="hero_eyebrow">Nurse-led · In-house · Zero hardware cost</div>
+        <h2 data-i18n="hero_title">Real-time, explainable infection surveillance for long-term care</h2>
+        <p data-i18n="hero_desc">An explainable rule-based engine encodes the national infection-control manual, and statistical process control watches every indicator in real time — shifting infection control from month-end reporting to proactive monitoring.</p>
+        <div class="hero-chips">
+          <span class="hero-chip"><i class="fas fa-microchip"></i><span data-i18n="chip_rules">16 criteria · 4 logic types</span></span>
+          <span class="hero-chip"><i class="fas fa-chart-line"></i><span data-i18n="chip_spc">SPC · 8 Nelson rules</span></span>
+          <span class="hero-chip"><i class="fas fa-bolt"></i><span data-i18n="chip_rt">Real-time recompute</span></span>
+        </div>
+      </div>
+      <div class="monitor">
+        <div class="m-top">
+          <span class="m-label" data-i18n="mon_label">Infection density · U-chart</span>
+          <span class="status-pill"><span class="dot"></span><span data-i18n="in_control">In control</span></span>
+        </div>
+        <div class="sparkwrap"><canvas id="heroSpark"></canvas></div>
+        <div class="m-foot">
+          <span data-i18n="mon_period">24-month window</span>
+          <span><b id="heroRate">1.32</b> <span data-i18n="per_kd">/1,000 resident-days</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.1fr .9fr; gap:20px; align-items:start;">
+    <div>
+      <div style="margin-bottom:16px;">
+        <div class="section-eyebrow" data-i18n="ov_results_eyebrow">Study results</div>
+        <div class="section-h" data-i18n="ov_results_h">24 months of surveillance, at a glance</div>
+        <div class="section-lead" data-i18n="ov_results_lead">Prospectively collected data from a 46-bed residential long-term care facility, adjudicated by the rule engine. All figures below are reproduced from the study with residents fully de-identified.</div>
+      </div>
+      <div class="kpis" id="ovKpis"></div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="pad">
+          <div class="card-h"><i class="fas fa-chart-pie"></i><span data-i18n="ov_dist_h">Confirmed cases by infection site</span>
+            <span class="note" id="ovDistNote"></span></div>
+          <div class="grid g-2" style="align-items:center;">
+            <div class="chartbox" style="height:230px;"><canvas id="ovSiteChart"></canvas></div>
+            <div id="ovSiteTable"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="pad">
+          <div class="card-h"><i class="fas fa-list-check"></i><span data-i18n="ov_pipe_h">What happens on each submission</span></div>
+          <div id="ovPipeline"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="pad">
+          <div class="card-h"><i class="fas fa-award"></i><span data-i18n="ov_impact_h">From reactive to proactive</span></div>
+          <div id="ovImpact"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="deident">
+    <i class="fas fa-user-shield"></i>
+    <div><b data-i18n="deident_t">De-identification notice.</b> <span data-i18n="deident_body">This is a demonstration build for presentation. All resident names and record numbers are synthetic; only coded identifiers (e.g. R-07) and aggregate, non-identifying statistics are shown. Organism names follow scientific nomenclature and are not personal data.</span></div>
+  </div>
+</section>
+
+<!-- ================= DASHBOARD ================= -->
+<section class="page" id="page-dashboard">
+  <div style="margin-bottom:18px;">
+    <div class="section-eyebrow" data-i18n="db_eyebrow">Real-time surveillance</div>
+    <div class="section-h" data-i18n="db_h">Surveillance Dashboard</div>
+    <div class="section-lead" data-i18n="db_lead">Standardized indicators recompute the moment a case is submitted. Control charts apply Nelson runs rules to separate true signals from random variation.</div>
+  </div>
+
+  <div class="kpis" id="dbKpis" style="margin-bottom:16px;"></div>
+
+  <div class="grid g-2" style="margin-bottom:16px;">
+    <div class="card"><div class="pad">
+      <div class="card-h"><i class="fas fa-chart-column"></i><span data-i18n="db_trend_h">Monthly cases & infection density</span></div>
+      <div class="chartbox" style="height:250px;"><canvas id="dbTrend"></canvas></div>
+    </div></div>
+    <div class="card"><div class="pad">
+      <div class="card-h"><i class="fas fa-users"></i><span data-i18n="db_age_h">Age distribution of cases</span></div>
+      <div class="chartbox" style="height:250px;"><canvas id="dbAge"></canvas></div>
+    </div></div>
+  </div>
+
+  <!-- SPC signature panel -->
+  <div class="spc" style="margin-bottom:16px;">
+    <div class="spc-head">
+      <span class="t"><i class="fas fa-wave-square"></i><span data-i18n="db_spc_h">Statistical Process Control</span></span>
+      <span class="spc-verdict" id="spcVerdict"><span class="dot"></span><span data-i18n="spc_incontrol">In control · no Nelson rule violation</span></span>
+    </div>
+    <div class="spc-body">
+      <div class="spc-charts">
+        <div>
+          <div class="ct" data-i18n="chart_c">C-chart<span data-i18n="chart_c_sub">monthly case count</span></div>
+          <div class="chartbox"><canvas id="cChart"></canvas></div>
+        </div>
+        <div>
+          <div class="ct" data-i18n="chart_u">U-chart<span data-i18n="chart_u_sub">infection density (‰)</span></div>
+          <div class="chartbox"><canvas id="uChart"></canvas></div>
+        </div>
+        <div>
+          <div class="ct" data-i18n="chart_cauti">U-chart · CAUTI<span data-i18n="chart_cauti_sub">catheter-UTI density (‰)</span></div>
+          <div class="chartbox"><canvas id="cauChart"></canvas></div>
+        </div>
+      </div>
+      <div class="spc-legend">
+        <span><i class="lg-line" style="border-color:#12768c;"></i><span data-i18n="lg_value">Observed</span></span>
+        <span><i class="lg-line" style="border-color:#2f9e8f;"></i><span data-i18n="lg_cl">Centerline (CL)</span></span>
+        <span><i class="lg-dash" style="border-color:#d9503c;"></i><span data-i18n="lg_limits">UCL / LCL (3σ)</span></span>
+        <span><i class="lg-dot" style="background:#d9503c;"></i><span data-i18n="lg_signal">Signal</span></span>
+      </div>
+      <div class="nelson" id="nelsonBox"></div>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-bottom:16px;">
+    <div class="card"><div class="pad">
+      <div class="card-h"><i class="fas fa-robot"></i><span data-i18n="db_alert_h">Automated trend alerts</span></div>
+      <div id="dbAlerts"></div>
+    </div></div>
+    <div class="card"><div class="pad">
+      <div class="card-h"><i class="fas fa-bacterium"></i><span data-i18n="db_org_h">Identified organisms</span>
+        <span class="note" id="dbOrgNote"></span></div>
+      <div class="chartbox" style="height:230px;"><canvas id="dbOrg"></canvas></div>
+    </div></div>
+  </div>
+
+  <div class="card"><div class="pad">
+    <div class="card-h"><i class="fas fa-table"></i><span data-i18n="db_qtr_h">Quarterly & cumulative indicators</span></div>
+    <div style="overflow-x:auto;"><table class="tbl" id="qtrTable"></table></div>
+  </div></div>
+</section>
+
+<!-- ================= ADJUDICATION ================= -->
+<section class="page" id="page-adjudication">
+  <div style="margin-bottom:8px;">
+    <div class="section-eyebrow" data-i18n="adj_eyebrow">Explainable rule engine</div>
+    <div class="section-h" data-i18n="adj_h">Case Adjudication</div>
+    <div class="section-lead" data-i18n="adj_lead">Walk a reported case through the five-step intake. The engine applies the encoded manual criteria and shows exactly which rule fired — every decision is transparent and auditable.</div>
+  </div>
+
+  <div class="card" style="margin-top:16px;"><div class="pad">
+    <div class="steps" id="steps"></div>
+
+    <!-- Step 1 -->
+    <div class="wz" id="wz1">
+      <div class="card-h"><i class="fas fa-user"></i><span data-i18n="s1_h">Step 1 · Select resident (auto-populated)</span></div>
+      <div class="form-2">
+        <div class="field">
+          <label><span data-i18n="s1_reviewer">Reviewer</span><span class="req">*</span></label>
+          <input class="ctrl" id="s1Reviewer" value="Demo Nurse">
+        </div>
+        <div class="field">
+          <label><span data-i18n="s1_date">Onset date</span><span class="req">*</span></label>
+          <input class="ctrl" type="date" id="s1Date">
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label><span data-i18n="s1_select">De-identified resident</span><span class="req">*</span></label>
+        <select class="ctrl" id="s1Resident"></select>
+      </div>
+      <div class="resident-card" id="s1Card" style="display:none;"></div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="wz" id="wz2" style="display:none;">
+      <div class="card-h"><i class="fas fa-diagram-project"></i><span data-i18n="s2_h">Step 2 · Classify infection site</span></div>
+      <p class="section-lead" style="margin-bottom:14px;" data-i18n="s2_lead">Seven body-system categories from the manual. Fully-wired example pathways are tagged “Demo”.</p>
+      <div class="site-grid" id="siteGrid"></div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="wz" id="wz3" style="display:none;">
+      <div class="card-h"><i class="fas fa-stethoscope"></i><span data-i18n="s3_h">Step 3 · Criteria-driven judgement</span></div>
+      <div id="judgeArea"></div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="wz" id="wz4" style="display:none;">
+      <div class="card-h"><i class="fas fa-flask"></i><span data-i18n="s4_h">Step 4 · Specimen, organism & antibiotics</span></div>
+      <div class="form-2">
+        <div class="field"><label data-i18n="s4_org">Organism (optional)</label>
+          <select class="ctrl" id="s4Org"></select></div>
+        <div class="field"><label data-i18n="s4_res">Resistance flag</label>
+          <select class="ctrl" id="s4Res">
+            <option value="none" data-i18n="opt_none">None</option>
+            <option value="MRSA">MRSA</option><option value="ESBL">ESBL</option>
+            <option value="CRE">CRE / Carbapenem-R</option><option value="MDR">MDR</option>
+          </select></div>
+      </div>
+      <div class="form-2" style="margin-top:14px;">
+        <div class="field"><label data-i18n="s4_abx">Antibiotic started</label>
+          <select class="ctrl" id="s4Abx"><option value="yes" data-i18n="opt_yes">Yes</option><option value="no" data-i18n="opt_no">No</option></select></div>
+        <div class="field"><label data-i18n="s4_spec">Specimen date (optional)</label>
+          <input class="ctrl" type="date" id="s4Spec"></div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="wz" id="wz5" style="display:none;">
+      <div class="card-h"><i class="fas fa-check-double"></i><span data-i18n="s5_h">Step 5 · Adjudication result</span></div>
+      <div id="resultArea"></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn btn-prev" id="btnPrev" onclick="wzPrev()" style="visibility:hidden;">
+        <i class="fas fa-arrow-left"></i><span data-i18n="btn_prev">Back</span></button>
+      <button class="btn btn-next" id="btnNext" onclick="wzNext()">
+        <span data-i18n="btn_next">Next</span><i class="fas fa-arrow-right"></i></button>
+    </div>
+  </div></div>
+</section>
+
+<!-- ================= RULE LOGIC ================= -->
+<section class="page" id="page-rules">
+  <div style="margin-bottom:18px;">
+    <div class="section-eyebrow" data-i18n="rl_eyebrow">Transparent by design</div>
+    <div class="section-h" data-i18n="rl_h">Four logic types, one auditable engine</div>
+    <div class="section-lead" data-i18n="rl_lead">Every criterion from the national infection-control manual is encoded as one of four explicit logic types. Nothing is a black box — each verdict can be traced back to the rule that produced it.</div>
+  </div>
+
+  <div class="logic-cards" id="logicCards" style="margin-bottom:20px;"></div>
+
+  <div class="matrix-note">
+    <div class="matrix-num">60×20<small data-i18n="rl_matrix_small">Care-measure matrix</small></div>
+    <div class="matrix-desc" data-i18n="rl_matrix_desc">Sixty care actions are cross-tagged against twenty clinical contexts (device type, organism, age, cluster signal…). When a case is confirmed, the engine ranks and returns the most relevant, context-specific infection-control measures — drawn from the same manual — so the nursing response is timely and consistent.</div>
+  </div>
+
+  <div class="card" style="margin-top:20px;"><div class="pad">
+    <div class="card-h"><i class="fas fa-wave-square"></i><span data-i18n="rl_nelson_h">Nelson runs rules applied by the SPC module</span></div>
+    <div id="nelsonList"></div>
+  </div></div>
+
+  <div class="deident" style="margin-top:20px;">
+    <i class="fas fa-circle-info"></i>
+    <div data-i18n="rl_foot">The full production system encodes 16 diagnostic criteria across all seven infection sites and 60 care actions. This demo wires the highest-volume pathways end-to-end to illustrate each logic type.</div>
+  </div>
+</section>
+
+<div class="footer">
+  <div><b data-i18n="foot_title">Explainable Rule-Based AI + SPC for HAI Surveillance in Residential Long-Term Care</b></div>
+  <div data-i18n="foot_sub">Demonstration build · de-identified synthetic data · for presentation use</div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+/* =========================================================
+   DE-IDENTIFIED SYNTHETIC DATA  (figures match the study)
+   24 months · Jul 2024 – Jun 2026 · 46-bed LTC facility
+   ========================================================= */
+const RESIDENTS = {
+  R01:{sex:'F',age:89}, R02:{sex:'M',age:101}, R03:{sex:'F',age:77}, R04:{sex:'F',age:91},
+  R05:{sex:'F',age:81}, R06:{sex:'M',age:60}, R07:{sex:'M',age:83}, R08:{sex:'F',age:90},
+  R09:{sex:'M',age:90}, R10:{sex:'M',age:60}, R11:{sex:'F',age:88}, R12:{sex:'F',age:78},
+  R13:{sex:'F',age:86}, R14:{sex:'F',age:85}, R15:{sex:'F',age:102}, R16:{sex:'M',age:87},
+  R17:{sex:'F',age:90}, R18:{sex:'F',age:94}, R19:{sex:'M',age:85}
+};
+// [monthIndex(1-24), site, sub, residentId, tubes, organism]
+const CASES = [
+  [3,'resp','1c','R01','ng','K. pneumoniae'],
+  [4,'resp','1c','R02','ng',''],
+  [5,'resp','1c','R03','ng',''],
+  [6,'uri','2a','R04','foley','E. coli'],
+  [7,'resp','1d','R05','ng',''],
+  [8,'uri','2b','R05','ng',''],
+  [8,'resp','1b','R06','ng',''],
+  [9,'resp','1d','R07','ng+foley',''],
+  [10,'resp','1c','R07','ng','K. pneumoniae'],
+  [10,'uri','2b','R08','',''],
+  [11,'resp','1d','R09','ng',''],
+  [12,'uri','2b','R09','ng',''],
+  [13,'uri','2b','R10','ng',''],
+  [13,'resp','1c','R11','ng',''],
+  [14,'resp','1c','R07','ng',''],
+  [15,'uri','2b','R12','foley',''],
+  [15,'blood','6a','R01','ng+foley','K. pneumoniae'],
+  [15,'resp','1c','R13','ng',''],
+  [16,'resp','1b','R14','ng',''],
+  [16,'resp','1c','R08','ng','Pseudomonas spp.'],
+  [17,'uri','2b','R15','',''],
+  [18,'uri','2a','R11','foley','K. pneumoniae'],
+  [19,'resp','1c','R16','ng',''],
+  [20,'uri','2a','R17','foley','P. mirabilis'],
+  [21,'uri','2a','R11','foley','Klebsiella spp.'],
+  [21,'resp','1c','R18','ng',''],
+  [22,'resp','1c','R19','ng',''],
+  [23,'uri','2a','R09','foley','K. pneumoniae'],
+  [24,'uri','2a','R04','foley','E. coli']
+];
+const DENOM = {
+  residentDays:[5,133,417,550,699,867,883,647,877,867,918,931,974,993,1139,1267,1224,1230,1240,1250,1235,1225,1230,1205],
+  catheterDays:[0,3,62,48,124,186,176,87,47,35,43,42,75,67,86,104,101,165,170,168,166,170,167,146],
+  admissions:[2,10,1,8,3,5,1,2,2,4,1,3,3,5,9,3,4,3,3,2,2,3,2,2]
+};
+const EXCLUDED_COUNT = 94;   // reported cases adjudicated as not-a-case
+// month labels: start Jul 2024
+const MONTH_LABELS = Array.from({length:24}, (_,i)=>{
+  const mo = ((6+i)%12)+1, yr = 2024 + Math.floor((6+i)/12);
+  return String(yr).slice(2)+'/'+String(mo).padStart(2,'0');
+});
+
+/* =========================================================
+   I18N  (en / zh-TW / ja / ko)
+   ========================================================= */
+const I18N = {
+en:{
+  app_title:"HAI Surveillance System", app_sub:"Rule-Based AI × Statistical Process Control",
+  demo_badge:"Demo · De-identified",
+  nav_overview:"Overview", nav_dashboard:"Surveillance Dashboard", nav_adjudication:"Case Adjudication", nav_rules:"Rule Logic",
+  hero_eyebrow:"Nurse-led · In-house · Zero hardware cost",
+  hero_title:"Real-time, explainable infection surveillance for long-term care",
+  hero_desc:"An explainable rule-based engine encodes the national infection-control manual, and statistical process control watches every indicator in real time — shifting infection control from month-end reporting to proactive monitoring.",
+  chip_rules:"16 criteria · 4 logic types", chip_spc:"SPC · 8 Nelson rules", chip_rt:"Real-time recompute",
+  mon_label:"Infection density · U-chart", in_control:"In control", mon_period:"24-month window", per_kd:"/1,000 resident-days",
+  ov_results_eyebrow:"Study results", ov_results_h:"24 months of surveillance, at a glance",
+  ov_results_lead:"Prospectively collected data from a 46-bed residential long-term care facility, adjudicated by the rule engine. All figures below are reproduced from the study with residents fully de-identified.",
+  ov_dist_h:"Confirmed cases by infection site", ov_pipe_h:"What happens on each submission", ov_impact_h:"From reactive to proactive",
+  deident_t:"De-identification notice.", deident_body:"This is a demonstration build for presentation. All resident names and record numbers are synthetic; only coded identifiers (e.g. R-07) and aggregate, non-identifying statistics are shown. Organism names follow scientific nomenclature and are not personal data.",
+  db_eyebrow:"Real-time surveillance", db_h:"Surveillance Dashboard",
+  db_lead:"Standardized indicators recompute the moment a case is submitted. Control charts apply Nelson runs rules to separate true signals from random variation.",
+  db_trend_h:"Monthly cases & infection density", db_age_h:"Age distribution of cases",
+  db_spc_h:"Statistical Process Control", spc_incontrol:"In control · no Nelson rule violation",
+  chart_c:"C-chart", chart_c_sub:"monthly case count", chart_u:"U-chart", chart_u_sub:"infection density (‰)",
+  chart_cauti:"U-chart · CAUTI", chart_cauti_sub:"catheter-UTI density (‰)",
+  lg_value:"Observed", lg_cl:"Centerline (CL)", lg_limits:"UCL / LCL (3σ)", lg_signal:"Signal",
+  db_alert_h:"Automated trend alerts", db_org_h:"Identified organisms", db_qtr_h:"Quarterly & cumulative indicators",
+  adj_eyebrow:"Explainable rule engine", adj_h:"Case Adjudication",
+  adj_lead:"Walk a reported case through the five-step intake. The engine applies the encoded manual criteria and shows exactly which rule fired — every decision is transparent and auditable.",
+  s1_h:"Step 1 · Select resident (auto-populated)", s1_reviewer:"Reviewer", s1_date:"Onset date", s1_select:"De-identified resident",
+  s2_h:"Step 2 · Classify infection site", s2_lead:"Seven body-system categories from the manual. Fully-wired example pathways are tagged “Demo”.",
+  s3_h:"Step 3 · Criteria-driven judgement", s4_h:"Step 4 · Specimen, organism & antibiotics",
+  s4_org:"Organism (optional)", s4_res:"Resistance flag", opt_none:"None", s4_abx:"Antibiotic started", opt_yes:"Yes", opt_no:"No", s4_spec:"Specimen date (optional)",
+  s5_h:"Step 5 · Adjudication result", btn_prev:"Back", btn_next:"Next",
+  rl_eyebrow:"Transparent by design", rl_h:"Four logic types, one auditable engine",
+  rl_lead:"Every criterion from the national infection-control manual is encoded as one of four explicit logic types. Nothing is a black box — each verdict can be traced back to the rule that produced it.",
+  rl_matrix_small:"Care-measure matrix",
+  rl_matrix_desc:"Sixty care actions are cross-tagged against twenty clinical contexts (device type, organism, age, cluster signal…). When a case is confirmed, the engine ranks and returns the most relevant, context-specific infection-control measures — drawn from the same manual — so the nursing response is timely and consistent.",
+  rl_nelson_h:"Nelson runs rules applied by the SPC module",
+  rl_foot:"The full production system encodes 16 diagnostic criteria across all seven infection sites and 60 care actions. This demo wires the highest-volume pathways end-to-end to illustrate each logic type.",
+  foot_title:"Explainable Rule-Based AI + SPC for HAI Surveillance in Residential Long-Term Care",
+  foot_sub:"Demonstration build · de-identified synthetic data · for presentation use",
+  // dynamic
+  step_labels:["Resident","Site","Criteria","Specimen","Result"],
+  kpi_cases:"Confirmed HAI cases", kpi_rate:"Overall HAI rate", kpi_cauti:"CAUTI rate", kpi_residents:"Residents affected",
+  kpi_pd:"Resident-days", kpi_cd:"Catheter-days", kpi_excluded:"Correctly excluded", kpi_orgcomplete:"Abx / resistance complete",
+  sub_perkd:"per 1,000 resident-days", sub_perkcd:"per 1,000 catheter-days", sub_over24:"over 24 months",
+  sub_notacase:"reported, not-a-case", sub_allcases:"all 29 cases · organisms in 10", sub_uniqueres:"of cases across the facility",
+  site_resp:"Respiratory", site_uri:"Urinary tract", site_gi:"Gastrointestinal", site_eent:"Eye/ear/nose/mouth",
+  site_skin:"Skin & soft tissue", site_blood:"Bloodstream", site_fever:"Unexplained fever",
+  sub_1a:"Common cold / pharyngitis", sub_1b:"Influenza-like illness", sub_1c:"Pneumonia", sub_1d:"Lower-respiratory infection",
+  sub_2a:"Catheter-associated UTI", sub_2b:"Non-catheter UTI", sub_3:"Gastroenteritis",
+  sub_4a:"Conjunctivitis", sub_4b:"Ear infection", sub_4c:"Oral infection", sub_4d:"Sinusitis",
+  sub_5a:"Skin & soft-tissue infection", sub_5b:"Scabies", sub_6a:"Lab-confirmed bloodstream infection", sub_6b:"Clinical sepsis", sub_7:"Unexplained fever",
+  ax_cases:"Cases", ax_density:"Density (‰)", ax_count:"Count", ax_age:"Age band",
+  leg_cases:"Cases", leg_density:"Density (‰)",
+  th_site:"Infection site", th_n:"n", th_pct:"Share",
+  th_period:"Period", th_cases:"Cases", th_pd:"Resident-days", th_density:"Density (‰)",
+  th_cauti_n:"CAUTI", th_cd:"Catheter-days", th_cauti_d:"CAUTI (‰)",
+  row_total:"Study total",
+  pipe:[
+    {t:"Case repository",d:"The confirmed case is written to the surveillance record."},
+    {t:"Real-time rates",d:"Standardized infection density recomputes instantly — no month-end batch."},
+    {t:"SPC module",d:"Eight Nelson runs rules re-evaluate the control charts."},
+    {t:"Care-measure matrix",d:"Context-specific infection-control actions are ranked and returned."}
+  ],
+  pms:"ms",
+  impact:[
+    {b:"Follow-up after a report",a:"Over a week → immediate flagging"},
+    {b:"Standardized rates",a:"Month-end batch → real-time on submission"},
+    {b:"Anomaly detection",a:"Manual month-end review → automatic SPC signals"}
+  ],
+  impact_before:"Before", impact_after:"With the system",
+  alert_clear_t:"No control-limit or run-rule violations",
+  alert_clear_m:"All monitored indicators are within control limits across the 24-month window — a statistically stable infection process.",
+  alert_info_t:"Respiratory remains the leading site",
+  alert_info_m:"Respiratory infections account for the largest share; continue device-care audits (feeding-tube and airway) even while the process is in control.",
+  nelson:[
+    "1 point beyond 3σ (outside UCL/LCL)",
+    "9 points in a row on the same side of the centerline",
+    "6 points in a row steadily increasing or decreasing",
+    "14 points in a row alternating up and down",
+    "2 of 3 consecutive points beyond 2σ (same side)",
+    "4 of 5 consecutive points beyond 1σ (same side)",
+    "15 points in a row within 1σ (either side)",
+    "8 points in a row beyond 1σ (either side)"
+  ],
+  nelson_status_ok:"Not triggered", nelson_none:"No Nelson rule fired during the study period — the process is in statistical control, indicating a stable infection process rather than undetected events.",
+  logic:[
+    {tag:"Threshold logic", d:"Confirm when the count of qualifying findings reaches a defined threshold.", ex:"Pneumonia — a new chest-X-ray infiltrate plus ≥2 of 6 respiratory findings.", f:"count(findings) ≥ 2"},
+    {tag:"Single-sufficient logic", d:"A single decisive finding is enough to confirm on its own.", ex:"Skin/soft-tissue — purulent drainage at the site confirms the case directly.", f:"purulent_drainage → confirm"},
+    {tag:"Combinatorial logic", d:"Require a mandatory finding AND at least one supporting finding.", ex:"Scabies — a characteristic rash AND (physician diagnosis OR lab confirmation OR epidemiologic link).", f:"rash ∧ (dx ∨ lab ∨ link)"},
+    {tag:"Exclusion logic", d:"Rule out non-infectious explanations before confirming.", ex:"Exclude congestive heart failure and other non-infectious causes before adjudicating pneumonia.", f:"¬ non_infectious_cause"}
+  ],
+  // wizard
+  s1_placeholder:"— choose a resident —",
+  rc_age:"Age", rc_sex:"Sex", rc_tubes:"Devices", rc_id:"Coded ID", rc_none:"None",
+  demo_tag:"Demo", full_tag:"Full system",
+  judge_pneu_h:"Pneumonia — threshold + exclusion logic",
+  judge_pneu_hint:"With a new X-ray infiltrate, confirm when ≥2 of the findings below are present (after excluding non-infectious causes).",
+  gate_pneu_q:"Does a chest X-ray show a new infiltrate?",
+  c_pneu:["New or worsening cough","New purulent sputum or increased sputum","Fever ≥ 38 °C","Pleuritic chest pain","New or worsening auscultation findings","Dyspnoea, RR > 25/min, or altered mental status"],
+  c_pneu_excl:"Congestive heart failure and other non-infectious causes have been excluded.",
+  judge_cauti_h:"Catheter-associated UTI — threshold logic",
+  judge_cauti_hint:"Indwelling catheter present. Confirm when ≥2 of the signs below are present.",
+  cauti_gate_yes:"Indwelling urinary catheter detected for this resident.",
+  cauti_gate_no:"No indwelling catheter — this pathway needs one; go back and choose a catheter resident.",
+  c_cauti:["Fever ≥ 38 °C or rigors","New costovertebral-angle or suprapubic pain/tenderness","New change in urine character (haematuria, malodour, sediment, pyuria)","Worsened mental or functional status"],
+  judge_skin_h:"Skin & soft-tissue — single-sufficient OR combinatorial",
+  judge_skin_hint:"Purulent drainage alone confirms the case. Otherwise, confirm when ≥4 of the signs below are present.",
+  c_skin_pus:"Purulent drainage at a wound, skin or soft-tissue site (confirms directly)",
+  c_skin_or:"Or, without purulence, ≥4 of the following new/increased findings:",
+  c_skin:["Redness (new or increased)","Swelling (new or increased)","Heat (new or increased)","Pain or tenderness (new or increased)","Serous drainage","Fever ≥ 38 °C or functional decline"],
+  verdict_pass_t:"Meets surveillance criteria — case confirmed", verdict_fail_t:"Does not yet meet surveillance criteria",
+  verdict_via:"Rule fired:", verdict_count:"findings matched", verdict_need:"required",
+  verdict_pus:"Single-sufficient rule: purulent drainage present.",
+  measures_h:"Recommended context-specific measures",
+  m_resp:["Turn and perform chest physiotherapy at least every 2 hours for bed-bound residents.","Elevate the head 30–45° during and after tube feeding to prevent aspiration.","Audit hand hygiene and aseptic suctioning technique."],
+  m_uri:["Review catheter necessity daily and remove at the earliest opportunity.","Maintain a closed drainage system with the bag below the bladder.","Keep the urethral meatus clean; avoid routine prophylactic antibiotics."],
+  m_skin:["Perform aseptic wound care matched to wound grade; document size and drainage.","Reposition at least every 2 hours and use a pressure-relieving surface.","Assess skin integrity daily to catch early redness or breakdown."],
+  choose_site_first:"Select an infection site to continue.",
+  need_pass:"Criteria are not yet met — complete the checklist to proceed.",
+  toast_reset:"New adjudication started."
+},
+zh:{
+  app_title:"醫療照護相關感染監測系統", app_sub:"規則式 AI × 統計製程管制",
+  demo_badge:"展示版 · 已去識別化",
+  nav_overview:"系統總覽", nav_dashboard:"即時監測儀表板", nav_adjudication:"收案判定", nav_rules:"規則邏輯",
+  hero_eyebrow:"護理主導 · 自行開發 · 零硬體成本",
+  hero_title:"長照機構的即時、可解釋感染監測",
+  hero_desc:"以可解釋的規則引擎編碼國家感染管制手冊，並以統計製程管制即時監看每一項指標——讓感染管制從月底通報轉為主動監控。",
+  chip_rules:"16 項條件 · 4 種判定邏輯", chip_spc:"SPC · 8 條 Nelson 規則", chip_rt:"即時重算",
+  mon_label:"感染密度 · U 管制圖", in_control:"管制內", mon_period:"24 個月區間", per_kd:"／千住民人日",
+  ov_results_eyebrow:"研究結果", ov_results_h:"24 個月監測成果一覽",
+  ov_results_lead:"資料前瞻性蒐集自 46 床住宿型長照機構，由規則引擎完成收案判定。以下數據取自研究，住民已完全去識別化。",
+  ov_dist_h:"確診個案之感染部位分布", ov_pipe_h:"每次送出時發生什麼", ov_impact_h:"由被動轉為主動",
+  deident_t:"去識別化聲明。", deident_body:"本頁為發表展示版本。所有住民姓名與病歷號皆為虛擬；僅顯示代碼（如 R-07）與無法識別個人之彙總統計。菌株名稱採學名，非個資。",
+  db_eyebrow:"即時監測", db_h:"監測儀表板",
+  db_lead:"每次送出個案即時重算標準化指標。管制圖套用 Nelson 判讀規則，區辨真實訊號與隨機變異。",
+  db_trend_h:"每月個案數與感染密度", db_age_h:"個案年齡分布",
+  db_spc_h:"統計製程管制", spc_incontrol:"管制內 · 無 Nelson 規則違反",
+  chart_c:"C 管制圖", chart_c_sub:"每月個案數", chart_u:"U 管制圖", chart_u_sub:"感染密度（‰）",
+  chart_cauti:"U 圖 · 導管 UTI", chart_cauti_sub:"導尿管相關感染密度（‰）",
+  lg_value:"觀測值", lg_cl:"中心線（CL）", lg_limits:"UCL／LCL（3σ）", lg_signal:"訊號",
+  db_alert_h:"自動趨勢警示", db_org_h:"已鑑定菌株", db_qtr_h:"季度與累計指標",
+  adj_eyebrow:"可解釋規則引擎", adj_h:"收案判定",
+  adj_lead:"引導一筆通報個案走完五步驟收案。引擎套用手冊條件並明確標示是哪一條規則成立——每個判定皆透明且可稽核。",
+  s1_h:"步驟一 · 選取住民（自動帶入）", s1_reviewer:"審查者", s1_date:"發病日期", s1_select:"去識別化住民",
+  s2_h:"步驟二 · 分類感染部位", s2_lead:"手冊之七大身體系統分類。完整串接之示範路徑標示「展示」。",
+  s3_h:"步驟三 · 依條件判定", s4_h:"步驟四 · 檢體、菌株與抗生素",
+  s4_org:"菌株（選填）", s4_res:"抗藥性標記", opt_none:"無", s4_abx:"是否開立抗生素", opt_yes:"是", opt_no:"否", s4_spec:"檢體日期（選填）",
+  s5_h:"步驟五 · 判定結果", btn_prev:"上一步", btn_next:"下一步",
+  rl_eyebrow:"透明化設計", rl_h:"四種判定邏輯，一套可稽核引擎",
+  rl_lead:"手冊中每一項條件皆編碼為四種明確判定邏輯之一。沒有黑箱——每個判定都能回溯到成立的那條規則。",
+  rl_matrix_small:"照護措施矩陣",
+  rl_matrix_desc:"六十項照護措施與二十種臨床情境（管路種類、菌株、年齡、群聚訊號…）交叉標記。個案確診時，引擎依情境排序並回傳最相關之感控措施——皆取自同一手冊——使護理回應及時且一致。",
+  rl_nelson_h:"SPC 模組套用之 Nelson 判讀規則",
+  rl_foot:"正式系統編碼七大部位共 16 項判定條件與 60 項照護措施。本展示版將最高量之路徑完整串接，以說明各判定邏輯。",
+  foot_title:"住宿型長照機構之可解釋規則式 AI 結合 SPC 感染監測",
+  foot_sub:"展示版本 · 去識別化虛擬資料 · 供發表使用",
+  step_labels:["住民","部位","條件","檢體","結果"],
+  kpi_cases:"確診 HAI 個案", kpi_rate:"整體 HAI 感染率", kpi_cauti:"導管 UTI 感染率", kpi_residents:"涉及住民數",
+  kpi_pd:"住民人日", kpi_cd:"導尿管人日", kpi_excluded:"正確排除", kpi_orgcomplete:"抗生素／抗藥性完整率",
+  sub_perkd:"每千住民人日", sub_perkcd:"每千導尿管人日", sub_over24:"24 個月累計",
+  sub_notacase:"通報但不收案", sub_allcases:"全部 29 例 · 10 例有菌株", sub_uniqueres:"位住民涉及個案",
+  site_resp:"呼吸道", site_uri:"泌尿道", site_gi:"胃腸道", site_eent:"眼耳鼻口",
+  site_skin:"皮膚及軟組織", site_blood:"血流", site_fever:"無法解釋的發燒",
+  sub_1a:"一般感冒／咽喉炎", sub_1b:"類流感", sub_1c:"肺炎", sub_1d:"下呼吸道感染",
+  sub_2a:"導尿管相關泌尿道感染", sub_2b:"非導管泌尿道感染", sub_3:"腸胃炎",
+  sub_4a:"結膜炎", sub_4b:"耳感染", sub_4c:"口腔感染", sub_4d:"鼻竇炎",
+  sub_5a:"皮膚及軟組織感染", sub_5b:"疥瘡", sub_6a:"檢驗證實之血流感染", sub_6b:"臨床敗血症", sub_7:"無法解釋的發燒",
+  ax_cases:"個案數", ax_density:"密度（‰）", ax_count:"次數", ax_age:"年齡層",
+  leg_cases:"個案數", leg_density:"密度（‰）",
+  th_site:"感染部位", th_n:"n", th_pct:"佔比",
+  th_period:"期間", th_cases:"個案數", th_pd:"住民人日", th_density:"密度（‰）",
+  th_cauti_n:"導管UTI", th_cd:"導尿管人日", th_cauti_d:"導管UTI（‰）",
+  row_total:"研究合計",
+  pipe:[
+    {t:"個案資料庫", d:"確診個案寫入監測紀錄。"},
+    {t:"即時率指標", d:"標準化感染密度即時重算——不需月底批次結算。"},
+    {t:"SPC 模組", d:"八條 Nelson 規則重新評估管制圖。"},
+    {t:"照護措施矩陣", d:"依情境排序並回傳感控措施。"}
+  ],
+  pms:"毫秒",
+  impact:[
+    {b:"通報後追蹤", a:"逾一週 → 即時標示"},
+    {b:"標準化率", a:"月底批次 → 送出即時產出"},
+    {b:"異常偵測", a:"人工月底審查 → 自動 SPC 訊號"}
+  ],
+  impact_before:"導入前", impact_after:"導入系統後",
+  alert_clear_t:"無管制界限或 run-rule 違反",
+  alert_clear_m:"24 個月區間內所有監測指標皆在管制界限內——感染過程統計上穩定。",
+  alert_info_t:"呼吸道仍為主要部位",
+  alert_info_m:"呼吸道感染佔比最高；即使製程在管制內，仍應持續稽核管路照護（鼻胃管與呼吸道）。",
+  nelson:[
+    "1 點超出 3σ（落於 UCL／LCL 之外）",
+    "連續 9 點落在中心線同側",
+    "連續 6 點持續上升或下降",
+    "連續 14 點上下交替",
+    "連續 3 點中有 2 點超出 2σ（同側）",
+    "連續 5 點中有 4 點超出 1σ（同側）",
+    "連續 15 點落在 1σ 之內（兩側）",
+    "連續 8 點落在 1σ 之外（兩側）"
+  ],
+  nelson_status_ok:"未觸發", nelson_none:"研究期間無任何 Nelson 規則成立——製程處於統計管制之下，顯示感染過程穩定而非漏偵測事件。",
+  logic:[
+    {tag:"閾值型", d:"當符合之條件數達到設定閾值即收案。", ex:"肺炎——新的胸部 X 光浸潤，加上 6 項呼吸道徵象中的 ≥2 項。", f:"符合條件數 ≥ 2"},
+    {tag:"單一充分型", d:"單一決定性徵象即足以直接收案。", ex:"皮膚／軟組織——患部出現膿性分泌物即可直接收案。", f:"膿性分泌物 → 收案"},
+    {tag:"組合型", d:"需具備一項必要徵象「且」至少一項佐證。", ex:"疥瘡——特徵性疹子「且」（醫師診斷 或 實驗確認 或 流行病學相關）。", f:"疹子 ∧ (診斷 ∨ 實驗 ∨ 接觸)"},
+    {tag:"排除型", d:"收案前先排除非感染性成因。", ex:"判定肺炎前，先排除心臟衰竭等非感染性成因。", f:"¬ 非感染成因"}
+  ],
+  s1_placeholder:"— 請選擇住民 —",
+  rc_age:"年齡", rc_sex:"性別", rc_tubes:"管路", rc_id:"代碼", rc_none:"無",
+  demo_tag:"展示", full_tag:"完整系統",
+  judge_pneu_h:"肺炎——閾值型 ＋ 排除型",
+  judge_pneu_hint:"有新的 X 光浸潤時，符合以下 ≥2 項（並已排除非感染成因）即收案。",
+  gate_pneu_q:"胸部 X 光是否顯示新的浸潤？",
+  c_pneu:["新發作或加劇的咳嗽","新產生膿痰或痰量增加","發燒 ≥ 38 °C","肋膜性胸痛","新產生或加劇的呼吸音","呼吸困難、呼吸速率 > 25／分或意識改變"],
+  c_pneu_excl:"已排除心臟衰竭及其他非感染性成因。",
+  judge_cauti_h:"導管相關泌尿道感染——閾值型",
+  judge_cauti_hint:"住民有留置導尿管。符合以下 ≥2 項徵象即收案。",
+  cauti_gate_yes:"偵測到此住民有留置導尿管。",
+  cauti_gate_no:"無留置導尿管——此路徑需導尿管；請回上一步選擇有導尿管之住民。",
+  c_cauti:["發燒 ≥ 38 °C 或寒顫","新發生的肋脊角或恥骨上疼痛／壓痛","尿液性質改變（血尿、惡臭、沉澱、膿尿）","意識或日常功能變差"],
+  judge_skin_h:"皮膚及軟組織——單一充分型 或 組合型",
+  judge_skin_hint:"單獨的膿性分泌物即可收案；否則需符合以下 ≥4 項。",
+  c_skin_pus:"傷口、皮膚或軟組織部位出現膿性分泌物（直接收案）",
+  c_skin_or:"或在無膿時，符合以下 ≥4 項新發生／增加之徵象：",
+  c_skin:["紅（新發生或增加）","腫（新發生或增加）","熱（新發生或增加）","疼痛或壓痛（新發生或增加）","漿液性分泌物","發燒 ≥ 38 °C 或功能變差"],
+  verdict_pass_t:"符合監測條件——確定收案", verdict_fail_t:"尚未符合監測條件",
+  verdict_via:"成立規則：", verdict_count:"項符合", verdict_need:"需要",
+  verdict_pus:"單一充分規則：出現膿性分泌物。",
+  measures_h:"建議之情境化感控措施",
+  m_resp:["長期臥床住民至少每 2 小時翻身並執行胸部物理治療。","灌食中與灌食後將床頭抬高 30–45° 以預防吸入。","稽核手部衛生與無菌抽痰技術。"],
+  m_uri:["每日評估導尿管留置必要性，儘早拔除。","維持密閉引流系統，尿袋置於膀胱以下。","保持尿道口清潔；避免例行預防性抗生素。"],
+  m_skin:["依傷口分級執行無菌換藥，記錄大小與分泌物。","至少每 2 小時翻身並使用減壓床墊。","每日評估皮膚完整性，及早發現泛紅或破損。"],
+  choose_site_first:"請先選擇感染部位以繼續。",
+  need_pass:"尚未符合條件——請完成勾選後繼續。",
+  toast_reset:"已開始新的收案判定。"
+},
+ja:{
+  app_title:"医療関連感染サーベイランスシステム", app_sub:"ルールベースAI × 統計的工程管理",
+  demo_badge:"デモ · 匿名化済み",
+  nav_overview:"概要", nav_dashboard:"監視ダッシュボード", nav_adjudication:"症例判定", nav_rules:"ルールロジック",
+  hero_eyebrow:"看護師主導 · 内製 · ハードウェア費用ゼロ",
+  hero_title:"長期療養施設のためのリアルタイムで説明可能な感染監視",
+  hero_desc:"説明可能なルールエンジンが国の感染管理マニュアルを符号化し、統計的工程管理が各指標をリアルタイムで監視——感染管理を月末報告から能動的な監視へと転換します。",
+  chip_rules:"16基準 · 4種のロジック", chip_spc:"SPC · 8つのNelsonルール", chip_rt:"リアルタイム再計算",
+  mon_label:"感染密度 · U管理図", in_control:"管理内", mon_period:"24か月間", per_kd:"／1,000入所者・日",
+  ov_results_eyebrow:"研究結果", ov_results_h:"24か月間の監視を一望",
+  ov_results_lead:"46床の入所型長期療養施設で前向きに収集し、ルールエンジンで判定したデータです。以下の数値は研究に基づき、入所者は完全に匿名化されています。",
+  ov_dist_h:"感染部位別の確定症例", ov_pipe_h:"送信のたびに起こること", ov_impact_h:"受動から能動へ",
+  deident_t:"匿名化に関する注記。", deident_body:"本ページは発表用のデモ版です。入所者の氏名やカルテ番号はすべて架空であり、コード（例：R-07）と個人を特定しない集計統計のみを表示します。菌名は学名であり個人情報ではありません。",
+  db_eyebrow:"リアルタイム監視", db_h:"監視ダッシュボード",
+  db_lead:"症例を送信した瞬間に標準化指標を再計算。管理図はNelsonルールを適用し、真のシグナルとランダム変動を区別します。",
+  db_trend_h:"月別症例数と感染密度", db_age_h:"症例の年齢分布",
+  db_spc_h:"統計的工程管理", spc_incontrol:"管理内 · Nelsonルール違反なし",
+  chart_c:"C管理図", chart_c_sub:"月別症例数", chart_u:"U管理図", chart_u_sub:"感染密度（‰）",
+  chart_cauti:"U図 · CAUTI", chart_cauti_sub:"カテーテル関連UTI密度（‰）",
+  lg_value:"観測値", lg_cl:"中心線（CL）", lg_limits:"UCL／LCL（3σ）", lg_signal:"シグナル",
+  db_alert_h:"自動トレンド警告", db_org_h:"同定された菌株", db_qtr_h:"四半期・累積指標",
+  adj_eyebrow:"説明可能なルールエンジン", adj_h:"症例判定",
+  adj_lead:"報告された症例を5ステップで判定します。エンジンがマニュアル基準を適用し、どのルールが成立したかを明示——すべての判定が透明で監査可能です。",
+  s1_h:"ステップ1 · 入所者を選択（自動入力）", s1_reviewer:"審査者", s1_date:"発症日", s1_select:"匿名化された入所者",
+  s2_h:"ステップ2 · 感染部位を分類", s2_lead:"マニュアルの7つの身体系統分類。完全実装の例示経路は「デモ」と表示。",
+  s3_h:"ステップ3 · 基準に基づく判定", s4_h:"ステップ4 · 検体・菌株・抗菌薬",
+  s4_org:"菌株（任意）", s4_res:"耐性フラグ", opt_none:"なし", s4_abx:"抗菌薬の開始", opt_yes:"あり", opt_no:"なし", s4_spec:"検体日（任意）",
+  s5_h:"ステップ5 · 判定結果", btn_prev:"戻る", btn_next:"次へ",
+  rl_eyebrow:"設計により透明", rl_h:"4種のロジック、1つの監査可能なエンジン",
+  rl_lead:"マニュアルの各基準は4種の明確なロジックのいずれかとして符号化されます。ブラックボックスはなく、各判定は成立したルールまで遡れます。",
+  rl_matrix_small:"ケア措置マトリクス",
+  rl_matrix_desc:"60のケア行動を20の臨床状況（デバイス種別、菌株、年齢、クラスターシグナル…）と相互タグ付け。症例確定時、エンジンは状況に応じて最も関連する感染管理措置を順位付けして返却——同じマニュアルに基づき、看護対応を迅速かつ一貫させます。",
+  rl_nelson_h:"SPCモジュールが適用するNelsonルール",
+  rl_foot:"本番システムは7部位の16診断基準と60ケア行動を符号化します。本デモは最も件数の多い経路をエンドツーエンドで実装し、各ロジックを示します。",
+  foot_title:"入所型長期療養施設におけるHAI監視のための説明可能なルールベースAI＋SPC",
+  foot_sub:"デモ版 · 匿名化された架空データ · 発表用",
+  step_labels:["入所者","部位","基準","検体","結果"],
+  kpi_cases:"確定HAI症例", kpi_rate:"全体HAI率", kpi_cauti:"CAUTI率", kpi_residents:"関与した入所者",
+  kpi_pd:"入所者・日", kpi_cd:"カテーテル・日", kpi_excluded:"正しく除外", kpi_orgcomplete:"抗菌薬／耐性の完全性",
+  sub_perkd:"1,000入所者・日あたり", sub_perkcd:"1,000カテーテル・日あたり", sub_over24:"24か月累計",
+  sub_notacase:"報告・非症例", sub_allcases:"全29例 · 10例で菌株同定", sub_uniqueres:"名が症例に関与",
+  site_resp:"呼吸器", site_uri:"尿路", site_gi:"消化器", site_eent:"眼耳鼻口",
+  site_skin:"皮膚・軟部組織", site_blood:"血流", site_fever:"原因不明の発熱",
+  sub_1a:"感冒／咽頭炎", sub_1b:"インフルエンザ様疾患", sub_1c:"肺炎", sub_1d:"下気道感染",
+  sub_2a:"カテーテル関連尿路感染", sub_2b:"非カテーテル尿路感染", sub_3:"胃腸炎",
+  sub_4a:"結膜炎", sub_4b:"耳感染", sub_4c:"口腔感染", sub_4d:"副鼻腔炎",
+  sub_5a:"皮膚・軟部組織感染", sub_5b:"疥癬", sub_6a:"検査確定血流感染", sub_6b:"臨床的敗血症", sub_7:"原因不明の発熱",
+  ax_cases:"症例数", ax_density:"密度（‰）", ax_count:"件数", ax_age:"年齢層",
+  leg_cases:"症例数", leg_density:"密度（‰）",
+  th_site:"感染部位", th_n:"n", th_pct:"割合",
+  th_period:"期間", th_cases:"症例数", th_pd:"入所者・日", th_density:"密度（‰）",
+  th_cauti_n:"CAUTI", th_cd:"カテーテル・日", th_cauti_d:"CAUTI（‰）",
+  row_total:"研究合計",
+  pipe:[
+    {t:"症例リポジトリ", d:"確定症例を監視記録に書き込みます。"},
+    {t:"リアルタイム率", d:"標準化感染密度を即時再計算——月末バッチ不要。"},
+    {t:"SPCモジュール", d:"8つのNelsonルールが管理図を再評価します。"},
+    {t:"ケア措置マトリクス", d:"状況別の感染管理措置を順位付けして返却します。"}
+  ],
+  pms:"ミリ秒",
+  impact:[
+    {b:"報告後の追跡", a:"1週間超 → 即時フラグ"},
+    {b:"標準化率", a:"月末バッチ → 送信時にリアルタイム"},
+    {b:"異常検知", a:"手動の月末レビュー → 自動SPCシグナル"}
+  ],
+  impact_before:"導入前", impact_after:"システム導入後",
+  alert_clear_t:"管理限界・ランルール違反なし",
+  alert_clear_m:"24か月間、監視対象の全指標が管理限界内——統計的に安定した感染プロセスです。",
+  alert_info_t:"呼吸器が引き続き最多部位",
+  alert_info_m:"呼吸器感染が最大の割合を占めます。管理内であってもデバイスケア（経管栄養・気道）の監査を継続してください。",
+  nelson:[
+    "1点が3σを超える（UCL／LCLの外）",
+    "9点連続で中心線の同じ側",
+    "6点連続で一方向に増加または減少",
+    "14点連続で上下交互",
+    "連続3点中2点が2σを超える（同側）",
+    "連続5点中4点が1σを超える（同側）",
+    "15点連続で1σ以内（両側）",
+    "8点連続で1σの外（両側）"
+  ],
+  nelson_status_ok:"未発生", nelson_none:"研究期間中、Nelsonルールは一度も成立しませんでした——プロセスは統計的管理下にあり、見逃しではなく安定した感染プロセスを示します。",
+  logic:[
+    {tag:"閾値型", d:"該当する所見数が既定の閾値に達したら確定。", ex:"肺炎——新しい胸部X線浸潤に加え、6所見中≥2。", f:"該当数 ≥ 2"},
+    {tag:"単一充足型", d:"単一の決定的所見だけで確定。", ex:"皮膚・軟部組織——患部の膿性排液で直接確定。", f:"膿性排液 → 確定"},
+    {tag:"組合せ型", d:"必須所見「かつ」少なくとも1つの補助所見が必要。", ex:"疥癬——特徴的発疹「かつ」（医師診断 または 検査確認 または 疫学的関連）。", f:"発疹 ∧ (診断 ∨ 検査 ∨ 接触)"},
+    {tag:"除外型", d:"確定前に非感染性の原因を除外。", ex:"肺炎の判定前に心不全など非感染性の原因を除外。", f:"¬ 非感染性原因"}
+  ],
+  s1_placeholder:"— 入所者を選択 —",
+  rc_age:"年齢", rc_sex:"性別", rc_tubes:"デバイス", rc_id:"コード", rc_none:"なし",
+  demo_tag:"デモ", full_tag:"本番システム",
+  judge_pneu_h:"肺炎——閾値型 ＋ 除外型",
+  judge_pneu_hint:"新しいX線浸潤がある場合、以下の≥2を満たせば確定（非感染性原因を除外後）。",
+  gate_pneu_q:"胸部X線に新しい浸潤がありますか？",
+  c_pneu:["新規または増悪する咳","新たな膿性喀痰または喀痰量増加","発熱 ≥ 38 °C","胸膜痛","新規または増悪する聴診所見","呼吸困難、呼吸数 > 25／分、または意識変容"],
+  c_pneu_excl:"心不全その他の非感染性原因を除外済み。",
+  judge_cauti_h:"カテーテル関連尿路感染——閾値型",
+  judge_cauti_hint:"留置カテーテルあり。以下の≥2を満たせば確定。",
+  cauti_gate_yes:"この入所者に留置尿道カテーテルを検出。",
+  cauti_gate_no:"留置カテーテルなし——この経路にはカテーテルが必要です。戻ってカテーテルのある入所者を選択してください。",
+  c_cauti:["発熱 ≥ 38 °C または悪寒","新規の肋骨脊柱角または恥骨上部の痛み／圧痛","尿性状の変化（血尿、悪臭、沈渣、膿尿）","意識または機能状態の悪化"],
+  judge_skin_h:"皮膚・軟部組織——単一充足型 または 組合せ型",
+  judge_skin_hint:"膿性排液のみで確定。なければ以下の≥4を満たせば確定。",
+  c_skin_pus:"創部・皮膚・軟部組織の膿性排液（直接確定）",
+  c_skin_or:"膿がない場合、以下の新規／増加所見を≥4：",
+  c_skin:["発赤（新規または増加）","腫脹（新規または増加）","熱感（新規または増加）","疼痛または圧痛（新規または増加）","漿液性排液","発熱 ≥ 38 °C または機能低下"],
+  verdict_pass_t:"監視基準を満たす——症例確定", verdict_fail_t:"まだ監視基準を満たさない",
+  verdict_via:"成立ルール：", verdict_count:"所見が該当", verdict_need:"必要",
+  verdict_pus:"単一充足ルール：膿性排液あり。",
+  measures_h:"推奨される状況別措置",
+  m_resp:["臥床入所者は少なくとも2時間ごとに体位変換と胸部理学療法を実施。","誤嚥予防のため経管栄養中および後は頭部を30–45°挙上。","手指衛生と無菌的吸引手技を監査。"],
+  m_uri:["カテーテルの必要性を毎日評価し、可能な限り早期に抜去。","閉鎖式ドレナージを維持し、バッグは膀胱より低く。","尿道口を清潔に保ち、ルーチンの予防的抗菌薬は避ける。"],
+  m_skin:["創のグレードに応じた無菌的創処置を行い、大きさと排液を記録。","少なくとも2時間ごとに体位変換し、減圧マットを使用。","毎日皮膚の完全性を評価し、早期の発赤や破綻を発見。"],
+  choose_site_first:"続けるには感染部位を選択してください。",
+  need_pass:"まだ基準を満たしていません——チェックを完了してください。",
+  toast_reset:"新しい判定を開始しました。"
+},
+ko:{
+  app_title:"의료관련감염 감시 시스템", app_sub:"규칙 기반 AI × 통계적 공정관리",
+  demo_badge:"데모 · 비식별화",
+  nav_overview:"개요", nav_dashboard:"감시 대시보드", nav_adjudication:"증례 판정", nav_rules:"규칙 로직",
+  hero_eyebrow:"간호사 주도 · 자체 개발 · 하드웨어 비용 제로",
+  hero_title:"장기요양시설을 위한 실시간·설명 가능한 감염 감시",
+  hero_desc:"설명 가능한 규칙 엔진이 국가 감염관리 지침을 부호화하고, 통계적 공정관리가 모든 지표를 실시간으로 감시합니다——감염관리를 월말 보고에서 능동적 모니터링으로 전환합니다.",
+  chip_rules:"16개 기준 · 4가지 로직", chip_spc:"SPC · 8개 Nelson 규칙", chip_rt:"실시간 재계산",
+  mon_label:"감염 밀도 · U 관리도", in_control:"관리 내", mon_period:"24개월 구간", per_kd:"／1,000 입소자·일",
+  ov_results_eyebrow:"연구 결과", ov_results_h:"24개월 감시 결과 한눈에",
+  ov_results_lead:"46병상 입소형 장기요양시설에서 전향적으로 수집하여 규칙 엔진으로 판정한 데이터입니다. 아래 수치는 연구에 근거하며 입소자는 완전히 비식별화되었습니다.",
+  ov_dist_h:"감염 부위별 확진 증례", ov_pipe_h:"제출 시마다 일어나는 일", ov_impact_h:"수동에서 능동으로",
+  deident_t:"비식별화 안내.", deident_body:"본 페이지는 발표용 데모입니다. 입소자 이름과 진료기록번호는 모두 가상이며, 코드(예: R-07)와 개인을 식별할 수 없는 집계 통계만 표시합니다. 균주명은 학명으로 개인정보가 아닙니다.",
+  db_eyebrow:"실시간 감시", db_h:"감시 대시보드",
+  db_lead:"증례를 제출하는 즉시 표준화 지표를 재계산합니다. 관리도는 Nelson 규칙을 적용해 실제 신호와 무작위 변동을 구별합니다.",
+  db_trend_h:"월별 증례 수와 감염 밀도", db_age_h:"증례 연령 분포",
+  db_spc_h:"통계적 공정관리", spc_incontrol:"관리 내 · Nelson 규칙 위반 없음",
+  chart_c:"C 관리도", chart_c_sub:"월별 증례 수", chart_u:"U 관리도", chart_u_sub:"감염 밀도(‰)",
+  chart_cauti:"U도 · CAUTI", chart_cauti_sub:"카테터 관련 UTI 밀도(‰)",
+  lg_value:"관측값", lg_cl:"중심선(CL)", lg_limits:"UCL／LCL(3σ)", lg_signal:"신호",
+  db_alert_h:"자동 추세 경보", db_org_h:"동정된 균주", db_qtr_h:"분기·누적 지표",
+  adj_eyebrow:"설명 가능한 규칙 엔진", adj_h:"증례 판정",
+  adj_lead:"보고된 증례를 5단계로 판정합니다. 엔진이 지침 기준을 적용하고 어떤 규칙이 성립했는지 명확히 표시——모든 판정이 투명하고 감사 가능합니다.",
+  s1_h:"1단계 · 입소자 선택(자동 입력)", s1_reviewer:"검토자", s1_date:"발병일", s1_select:"비식별화 입소자",
+  s2_h:"2단계 · 감염 부위 분류", s2_lead:"지침의 7개 신체계통 분류. 완전 구현된 예시 경로는 “데모”로 표시됩니다.",
+  s3_h:"3단계 · 기준 기반 판정", s4_h:"4단계 · 검체·균주·항생제",
+  s4_org:"균주(선택)", s4_res:"내성 표시", opt_none:"없음", s4_abx:"항생제 시작", opt_yes:"예", opt_no:"아니오", s4_spec:"검체일(선택)",
+  s5_h:"5단계 · 판정 결과", btn_prev:"이전", btn_next:"다음",
+  rl_eyebrow:"설계상 투명", rl_h:"4가지 로직, 하나의 감사 가능한 엔진",
+  rl_lead:"지침의 모든 기준은 4가지 명확한 로직 중 하나로 부호화됩니다. 블랙박스가 없으며, 각 판정은 성립한 규칙까지 추적됩니다.",
+  rl_matrix_small:"돌봄 조치 매트릭스",
+  rl_matrix_desc:"60개 돌봄 행동을 20개 임상 맥락(기구 종류, 균주, 연령, 군집 신호…)과 교차 태깅합니다. 증례 확진 시 엔진이 맥락에 맞는 감염관리 조치를 순위화하여 반환——동일 지침에 근거해 간호 대응을 신속하고 일관되게 합니다.",
+  rl_nelson_h:"SPC 모듈이 적용하는 Nelson 규칙",
+  rl_foot:"실제 시스템은 7개 부위의 16개 진단 기준과 60개 돌봄 행동을 부호화합니다. 본 데모는 건수가 가장 많은 경로를 엔드투엔드로 구현해 각 로직을 보여줍니다.",
+  foot_title:"입소형 장기요양시설의 HAI 감시를 위한 설명 가능한 규칙 기반 AI + SPC",
+  foot_sub:"데모 · 비식별화 가상 데이터 · 발표용",
+  step_labels:["입소자","부위","기준","검체","결과"],
+  kpi_cases:"확진 HAI 증례", kpi_rate:"전체 HAI 발생률", kpi_cauti:"CAUTI 발생률", kpi_residents:"관련 입소자 수",
+  kpi_pd:"입소자·일", kpi_cd:"카테터·일", kpi_excluded:"올바르게 제외", kpi_orgcomplete:"항생제／내성 완결성",
+  sub_perkd:"1,000 입소자·일당", sub_perkcd:"1,000 카테터·일당", sub_over24:"24개월 누적",
+  sub_notacase:"보고·비증례", sub_allcases:"전체 29건 · 10건 균주 동정", sub_uniqueres:"명이 증례에 관련",
+  site_resp:"호흡기", site_uri:"요로", site_gi:"위장관", site_eent:"안이비구",
+  site_skin:"피부·연조직", site_blood:"혈류", site_fever:"원인 불명 발열",
+  sub_1a:"감기／인두염", sub_1b:"인플루엔자 유사질환", sub_1c:"폐렴", sub_1d:"하기도 감염",
+  sub_2a:"카테터 관련 요로감염", sub_2b:"비카테터 요로감염", sub_3:"위장관염",
+  sub_4a:"결막염", sub_4b:"귀 감염", sub_4c:"구강 감염", sub_4d:"부비동염",
+  sub_5a:"피부·연조직 감염", sub_5b:"옴", sub_6a:"검사 확인 혈류감염", sub_6b:"임상적 패혈증", sub_7:"원인 불명 발열",
+  ax_cases:"증례 수", ax_density:"밀도(‰)", ax_count:"건수", ax_age:"연령대",
+  leg_cases:"증례 수", leg_density:"밀도(‰)",
+  th_site:"감염 부위", th_n:"n", th_pct:"비율",
+  th_period:"기간", th_cases:"증례 수", th_pd:"입소자·일", th_density:"밀도(‰)",
+  th_cauti_n:"CAUTI", th_cd:"카테터·일", th_cauti_d:"CAUTI(‰)",
+  row_total:"연구 합계",
+  pipe:[
+    {t:"증례 저장소", d:"확진 증례를 감시 기록에 기록합니다."},
+    {t:"실시간 발생률", d:"표준화 감염 밀도를 즉시 재계산——월말 배치 불필요."},
+    {t:"SPC 모듈", d:"8개 Nelson 규칙이 관리도를 재평가합니다."},
+    {t:"돌봄 조치 매트릭스", d:"맥락별 감염관리 조치를 순위화하여 반환합니다."}
+  ],
+  pms:"밀리초",
+  impact:[
+    {b:"보고 후 추적", a:"1주 초과 → 즉시 표시"},
+    {b:"표준화 발생률", a:"월말 배치 → 제출 시 실시간"},
+    {b:"이상 탐지", a:"수동 월말 검토 → 자동 SPC 신호"}
+  ],
+  impact_before:"도입 전", impact_after:"시스템 도입 후",
+  alert_clear_t:"관리한계·런룰 위반 없음",
+  alert_clear_m:"24개월 동안 모든 감시 지표가 관리한계 내에 있습니다——통계적으로 안정된 감염 과정입니다.",
+  alert_info_t:"호흡기가 여전히 최다 부위",
+  alert_info_m:"호흡기 감염이 가장 큰 비중을 차지합니다. 관리 내여도 기구 돌봄(경관영양·기도) 감사를 지속하십시오.",
+  nelson:[
+    "1점이 3σ를 벗어남(UCL／LCL 밖)",
+    "9점 연속으로 중심선 같은 쪽",
+    "6점 연속으로 지속 증가 또는 감소",
+    "14점 연속으로 위아래 교대",
+    "연속 3점 중 2점이 2σ 초과(같은 쪽)",
+    "연속 5점 중 4점이 1σ 초과(같은 쪽)",
+    "15점 연속으로 1σ 이내(양쪽)",
+    "8점 연속으로 1σ 밖(양쪽)"
+  ],
+  nelson_status_ok:"미발생", nelson_none:"연구 기간 동안 Nelson 규칙이 성립하지 않았습니다——공정이 통계적 관리 하에 있으며, 미탐지가 아니라 안정된 감염 과정을 나타냅니다.",
+  logic:[
+    {tag:"임계값형", d:"해당 소견 수가 정해진 임계값에 도달하면 확정.", ex:"폐렴——새로운 흉부 X선 침윤 + 6개 호흡기 소견 중 ≥2.", f:"해당 수 ≥ 2"},
+    {tag:"단일 충분형", d:"단일의 결정적 소견만으로 확정.", ex:"피부·연조직——부위의 화농성 배액으로 직접 확정.", f:"화농성 배액 → 확정"},
+    {tag:"조합형", d:"필수 소견 「그리고」 최소 하나의 보조 소견 필요.", ex:"옴——특징적 발진 「그리고」(의사 진단 또는 검사 확인 또는 역학적 관련).", f:"발진 ∧ (진단 ∨ 검사 ∨ 접촉)"},
+    {tag:"배제형", d:"확정 전 비감염성 원인을 배제.", ex:"폐렴 판정 전 심부전 등 비감염성 원인을 배제.", f:"¬ 비감염성 원인"}
+  ],
+  s1_placeholder:"— 입소자 선택 —",
+  rc_age:"연령", rc_sex:"성별", rc_tubes:"기구", rc_id:"코드", rc_none:"없음",
+  demo_tag:"데모", full_tag:"정식 시스템",
+  judge_pneu_h:"폐렴——임계값형 ＋ 배제형",
+  judge_pneu_hint:"새로운 X선 침윤이 있을 때 아래 ≥2를 충족하면 확정(비감염성 원인 배제 후).",
+  gate_pneu_q:"흉부 X선에 새로운 침윤이 있습니까?",
+  c_pneu:["새롭거나 악화되는 기침","새로운 화농성 가래 또는 가래량 증가","발열 ≥ 38 °C","흉막성 흉통","새롭거나 악화되는 청진 소견","호흡곤란, 호흡수 > 25／분, 또는 의식 변화"],
+  c_pneu_excl:"심부전 및 기타 비감염성 원인을 배제함.",
+  judge_cauti_h:"카테터 관련 요로감염——임계값형",
+  judge_cauti_hint:"유치 카테터 있음. 아래 ≥2 징후를 충족하면 확정.",
+  cauti_gate_yes:"이 입소자에게 유치 요도 카테터가 감지됨.",
+  cauti_gate_no:"유치 카테터 없음——이 경로에는 카테터가 필요합니다. 이전으로 돌아가 카테터가 있는 입소자를 선택하십시오.",
+  c_cauti:["발열 ≥ 38 °C 또는 오한","새로운 늑골척추각 또는 치골상부 통증／압통","소변 성상 변화(혈뇨, 악취, 침전물, 농뇨)","의식 또는 기능 상태 악화"],
+  judge_skin_h:"피부·연조직——단일 충분형 또는 조합형",
+  judge_skin_hint:"화농성 배액만으로 확정. 없으면 아래 ≥4를 충족하면 확정.",
+  c_skin_pus:"상처·피부·연조직 부위의 화농성 배액(직접 확정)",
+  c_skin_or:"화농이 없을 때 아래 새롭거나 증가한 소견 ≥4:",
+  c_skin:["발적(새롭거나 증가)","부종(새롭거나 증가)","열감(새롭거나 증가)","통증 또는 압통(새롭거나 증가)","장액성 배액","발열 ≥ 38 °C 또는 기능 저하"],
+  verdict_pass_t:"감시 기준 충족——증례 확정", verdict_fail_t:"아직 감시 기준 미충족",
+  verdict_via:"성립 규칙:", verdict_count:"개 소견 해당", verdict_need:"필요",
+  verdict_pus:"단일 충분 규칙: 화농성 배액 있음.",
+  measures_h:"권장 맥락별 조치",
+  m_resp:["와상 입소자는 최소 2시간마다 체위 변경과 흉부 물리치료 시행.","흡인 예방을 위해 경관영양 중·후 머리를 30–45° 상승.","손 위생과 무균 흡인 술기를 감사."],
+  m_uri:["카테터 필요성을 매일 평가하고 가능한 한 조기에 제거.","폐쇄식 배액을 유지하고 백을 방광보다 낮게.","요도구를 청결히 유지하고 일상적 예방적 항생제를 피함."],
+  m_skin:["상처 등급에 맞춰 무균 상처 처치를 하고 크기·배액을 기록.","최소 2시간마다 체위 변경하고 압력 완화 매트리스 사용.","매일 피부 완전성을 평가해 초기 발적·손상을 조기 발견."],
+  choose_site_first:"계속하려면 감염 부위를 선택하십시오.",
+  need_pass:"아직 기준을 충족하지 않았습니다——체크를 완료하십시오.",
+  toast_reset:"새 판정을 시작했습니다."
+}
+};
+</script>
+<script>
+/* ===================== state & helpers ===================== */
+let LANG = 'en';
+const T = () => I18N[LANG];
+const t = k => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : k);
+const langCode = {en:'en', zh:'zh-TW', ja:'ja', ko:'ko'};
+
+const SITE_INFO = {
+  resp :{icon:'fas fa-lungs',                color:'#12768c'},
+  uri  :{icon:'fas fa-flask',                color:'#cf8a2e'},
+  gi   :{icon:'fas fa-viruses',              color:'#2f9e8f'},
+  eent :{icon:'fas fa-eye',                  color:'#7a5aa6'},
+  skin :{icon:'fas fa-hand-holding-medical', color:'#d9503c'},
+  blood:{icon:'fas fa-droplet',              color:'#b23a2c'},
+  fever:{icon:'fas fa-temperature-half',     color:'#d9a441'}
+};
+const SITE_ORDER = ['resp','uri','gi','eent','skin','blood','fever'];
+const CATHETER_RES = new Set(['R01','R04','R07','R09','R11','R12','R17']);
+const siteName = c => t('site_'+c);
+const subName  = c => t('sub_'+c);
+const round2 = x => Math.round(x*100)/100;
+
+/* ===================== aggregation ===================== */
+function compute(){
+  const n = 24;
+  const counts = Array(n).fill(0);
+  const cautiByMonth = Array(n).fill(0);
+  const siteCount = {}, subCount = {}, orgCount = {};
+  const ages = [];
+  const residents = new Set();
+  CASES.forEach(([m,site,sub,rid,tube,org])=>{
+    counts[m-1]++;
+    if(sub==='2a') cautiByMonth[m-1]++;
+    siteCount[site]=(siteCount[site]||0)+1;
+    subCount[sub]=(subCount[sub]||0)+1;
+    if(org) orgCount[org]=(orgCount[org]||0)+1;
+    ages.push(RESIDENTS[rid].age);
+    residents.add(rid);
+  });
+  const totalPD = DENOM.residentDays.reduce((a,b)=>a+b,0);
+  const totalCD = DENOM.catheterDays.reduce((a,b)=>a+b,0);
+  const totalCases = CASES.length;
+  const cautiTotal = cautiByMonth.reduce((a,b)=>a+b,0);
+  const density = counts.map((c,i)=> DENOM.residentDays[i]>0 ? c/DENOM.residentDays[i]*1000 : null);
+  const cautiDensity = cautiByMonth.map((c,i)=> DENOM.catheterDays[i]>0 ? c/DENOM.catheterDays[i]*1000 : null);
+  const ageBands = {'60-69':0,'70-79':0,'80-89':0,'90-99':0,'100+':0};
+  ages.forEach(a=>{ if(a<70)ageBands['60-69']++; else if(a<80)ageBands['70-79']++;
+    else if(a<90)ageBands['80-89']++; else if(a<100)ageBands['90-99']++; else ageBands['100+']++; });
+  return {counts,cautiByMonth,siteCount,subCount,orgCount,ageBands,
+    totalPD,totalCD,totalCases,cautiTotal,density,cautiDensity,
+    residents:residents.size,
+    overallRate: round2(totalCases/totalPD*1000),
+    cautiRate: round2(cautiTotal/totalCD*1000)};
+}
+const D = compute();
+
+/* ===================== SPC math ===================== */
+function cChartData(){
+  const c = D.counts, cBar = c.reduce((a,b)=>a+b,0)/c.length;
+  const s = Math.sqrt(cBar);
+  const UCL = cBar + 3*s, LCL = Math.max(0, cBar - 3*s);
+  return {values:c, CL:round2(cBar), UCL:round2(UCL), LCL:round2(LCL), sigma:s,
+    ooc:c.map(v=> v>UCL || v<LCL)};
+}
+function uChartData(counts, denomDays, totalCount, totalDays){
+  const uBar = totalCount/totalDays*1000;
+  const vals=[], UCL=[], LCL=[], ooc=[];
+  counts.forEach((cnt,i)=>{
+    const days = denomDays[i];
+    if(days<=0){ vals.push(null); UCL.push(null); LCL.push(null); ooc.push(false); return; }
+    const nk = days/1000;
+    const v = cnt/days*1000;
+    const u = uBar + 3*Math.sqrt(uBar/nk);
+    const l = Math.max(0, uBar - 3*Math.sqrt(uBar/nk));
+    vals.push(round2(v)); UCL.push(round2(u)); LCL.push(round2(l));
+    ooc.push(v>u || v<l);
+  });
+  return {values:vals, CL:round2(uBar), UCL, LCL, ooc};
+}
+// Nelson runs rules on the C-chart (Poisson sigma); returns per-rule boolean triggered
+function nelsonCheck(){
+  const c = D.counts, CL = c.reduce((a,b)=>a+b,0)/c.length, s = Math.sqrt(CL);
+  if(s===0) return Array(8).fill(false);
+  const z = c.map(v => (v-CL)/s);
+  const trig = Array(8).fill(false);
+  // R1: beyond 3σ
+  trig[0] = z.some(v=>Math.abs(v)>3);
+  // R2: 9 same side
+  let run=1; for(let i=1;i<z.length;i++){ (Math.sign(z[i])===Math.sign(z[i-1])&&z[i]!==0)?run++:run=1; if(run>=9)trig[1]=true; }
+  // R3: 6 monotonic
+  let up=1,dn=1; for(let i=1;i<c.length;i++){ up=c[i]>c[i-1]?up+1:1; dn=c[i]<c[i-1]?dn+1:1; if(up>=6||dn>=6)trig[2]=true; }
+  // R4: 14 alternating
+  let alt=1; for(let i=1;i<c.length-1;i++){ const a=c[i]-c[i-1], b=c[i+1]-c[i]; (a*b<0)?alt++:alt=1; if(alt>=13)trig[3]=true; }
+  // R5: 2 of 3 beyond 2σ same side
+  for(let i=2;i<z.length;i++){ const w=[z[i-2],z[i-1],z[i]];
+    ['+','-'].forEach(sg=>{ const k=w.filter(v=> sg==='+'?v>2:v<-2).length; if(k>=2)trig[4]=true; }); }
+  // R6: 4 of 5 beyond 1σ same side
+  for(let i=4;i<z.length;i++){ const w=z.slice(i-4,i+1);
+    ['+','-'].forEach(sg=>{ const k=w.filter(v=> sg==='+'?v>1:v<-1).length; if(k>=4)trig[5]=true; }); }
+  // R7: 15 within 1σ
+  let inr=0; for(const v of z){ Math.abs(v)<1?inr++:inr=0; if(inr>=15)trig[6]=true; }
+  // R8: 8 beyond 1σ (either side)
+  let out=0; for(const v of z){ Math.abs(v)>1?out++:out=0; if(out>=8)trig[7]=true; }
+  return trig;
+}
+const NELSON = nelsonCheck();
+const ANY_VIOLATION = NELSON.some(Boolean);
+
+/* ===================== charts ===================== */
+const CH = {};
+function kill(id){ if(CH[id]){ CH[id].destroy(); delete CH[id]; } }
+const gridClr = 'rgba(18,48,58,.07)';
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+Chart.defaults.color = '#5f727a';
+
+function drawHeroSpark(){
+  kill('heroSpark');
+  const el = document.getElementById('heroSpark'); if(!el) return;
+  CH.heroSpark = new Chart(el, { type:'line',
+    data:{ labels:MONTH_LABELS, datasets:[{ data:D.density, borderColor:'#7fe3d3',
+      backgroundColor:'rgba(127,227,211,.14)', borderWidth:2, fill:true, tension:.35,
+      pointRadius:0, spanGaps:true }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{enabled:false}},
+      scales:{ x:{display:false}, y:{display:false, beginAtZero:true} } } });
+}
+
+function drawDoughnut(id, map, order){
+  kill(id); const el=document.getElementById(id); if(!el) return;
+  const keys = (order||Object.keys(map)).filter(k=>map[k]);
+  const total = keys.reduce((a,k)=>a+map[k],0);
+  CH[id] = new Chart(el, { type:'doughnut',
+    data:{ labels:keys.map(k=>siteName(k)),
+      datasets:[{ data:keys.map(k=>map[k]), backgroundColor:keys.map(k=>SITE_INFO[k].color),
+        borderColor:'#fff', borderWidth:2 }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'58%',
+      plugins:{ legend:{position:'right', labels:{font:{size:11}, padding:9, boxWidth:12}},
+        tooltip:{ callbacks:{ label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/total*100)}%)` } } } } });
+}
+
+function drawTrend(){
+  kill('dbTrend'); const el=document.getElementById('dbTrend'); if(!el) return;
+  CH.dbTrend = new Chart(el, { data:{ labels:MONTH_LABELS,
+    datasets:[
+      { type:'bar', label:t('leg_cases'), data:D.counts, backgroundColor:'rgba(18,118,140,.75)',
+        borderRadius:3, yAxisID:'y', order:2 },
+      { type:'line', label:t('leg_density'), data:D.density, borderColor:'#d9503c',
+        backgroundColor:'rgba(217,80,60,.1)', borderWidth:2, pointRadius:2.5,
+        pointBackgroundColor:'#d9503c', tension:.3, yAxisID:'y1', order:1, spanGaps:true } ]},
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{position:'top', labels:{font:{size:11}, boxWidth:12}} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:12} },
+        y:{ position:'left', beginAtZero:true, ticks:{stepSize:1, font:{size:10}},
+            title:{display:true, text:t('ax_cases'), font:{size:10}}, grid:{color:gridClr} },
+        y1:{ position:'right', beginAtZero:true, ticks:{font:{size:10}},
+            title:{display:true, text:t('ax_density'), font:{size:10}}, grid:{drawOnChartArea:false} } } } });
+}
+
+function drawAge(){
+  kill('dbAge'); const el=document.getElementById('dbAge'); if(!el) return;
+  const bands=Object.keys(D.ageBands);
+  CH.dbAge = new Chart(el, { type:'bar', data:{ labels:bands,
+    datasets:[{ data:bands.map(b=>D.ageBands[b]), backgroundColor:'rgba(122,90,166,.72)', borderRadius:3 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{grid:{display:false}, title:{display:true,text:t('ax_age'),font:{size:10}}, ticks:{font:{size:10}}},
+        y:{beginAtZero:true, ticks:{stepSize:2, font:{size:10}}, grid:{color:gridClr},
+           title:{display:true,text:t('ax_count'),font:{size:10}}} } } });
+}
+
+function drawOrg(){
+  kill('dbOrg'); const el=document.getElementById('dbOrg'); if(!el) return;
+  const entries=Object.entries(D.orgCount).sort((a,b)=>b[1]-a[1]);
+  CH.dbOrg = new Chart(el, { type:'bar', data:{ labels:entries.map(e=>e[0]),
+    datasets:[{ data:entries.map(e=>e[1]), backgroundColor:'rgba(47,158,143,.78)', borderRadius:3 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ x:{beginAtZero:true, ticks:{stepSize:1, font:{size:10}}, grid:{color:gridClr}},
+        y:{ticks:{font:{size:10, style:'italic'}}, grid:{display:false}} } } });
+}
+
+function drawControl(id, cd, variable){
+  kill(id); const el=document.getElementById(id); if(!el) return;
+  const pts = cd.values.map((v,i)=> cd.ooc[i]? '#d9503c':'#12768c');
+  const rad = cd.values.map((v,i)=> v==null?0 : (cd.ooc[i]?6:3.5));
+  const ds = [
+    { label:'v', data:cd.values, borderColor:'#12768c', backgroundColor:'rgba(18,118,140,.08)',
+      borderWidth:2, pointBackgroundColor:pts, pointBorderColor:pts, pointRadius:rad,
+      pointHoverRadius:6, tension:0, fill:false, spanGaps:true, order:1 },
+    { label:'CL', data:Array(24).fill(cd.CL), borderColor:'#2f9e8f', borderWidth:1.6,
+      pointRadius:0, fill:false, order:2 }
+  ];
+  const UCL = variable? cd.UCL : Array(24).fill(cd.UCL);
+  const LCL = variable? cd.LCL : Array(24).fill(cd.LCL);
+  ds.push({label:'UCL', data:UCL, borderColor:'#d9503c', borderWidth:1.3, borderDash:[5,3],
+    pointRadius:0, fill:false, spanGaps:true, order:3});
+  ds.push({label:'LCL', data:LCL, borderColor:'#d9503c', borderWidth:1.3, borderDash:[5,3],
+    pointRadius:0, fill:false, spanGaps:true, order:3});
+  CH[id] = new Chart(el, { type:'line', data:{labels:MONTH_LABELS, datasets:ds},
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ filter:it=>it.datasetIndex===0,
+          callbacks:{ afterBody:it=> cd.ooc[it[0].dataIndex] ? '⚠ '+t('lg_signal') : '' } } },
+      scales:{ x:{grid:{display:false}, ticks:{font:{size:8}, maxRotation:0, autoSkip:true, maxTicksLimit:8}},
+        y:{beginAtZero:true, grid:{color:gridClr}, ticks:{font:{size:9}}} } } });
+}
+
+/* ===================== renderers ===================== */
+function kpi(cls,icon,val,unit,label,sub){
+  return `<div class="kpi ${cls}"><div class="k-top"><i class="${icon}"></i><span>${label}</span></div>
+    <div class="k-val">${val}${unit?`<small>${unit}</small>`:''}</div>
+    <div class="k-sub">${sub||''}</div></div>`;
+}
+function renderOverviewKpis(){
+  document.getElementById('ovKpis').innerHTML =
+    kpi('','fas fa-file-medical', D.totalCases,'', t('kpi_cases'), t('sub_over24')) +
+    kpi('k-sage','fas fa-chart-line', D.overallRate,'‰', t('kpi_rate'), t('sub_perkd')) +
+    kpi('k-amber','fas fa-bed-pulse', D.cautiRate,'‰', t('kpi_cauti'), t('sub_perkcd')) +
+    kpi('k-violet','fas fa-user-group', D.residents,'', t('kpi_residents'), t('sub_uniqueres'));
+}
+function renderDashKpis(){
+  document.getElementById('dbKpis').innerHTML =
+    kpi('','fas fa-calendar-check', D.totalPD.toLocaleString(),'', t('kpi_pd'), t('sub_over24')) +
+    kpi('k-amber','fas fa-bed-pulse', D.totalCD.toLocaleString(),'', t('kpi_cd'), t('sub_over24')) +
+    kpi('k-coral','fas fa-filter-circle-xmark', EXCLUDED_COUNT,'', t('kpi_excluded'), t('sub_notacase')) +
+    kpi('k-sage','fas fa-vial-circle-check', '100','%', t('kpi_orgcomplete'), t('sub_allcases'));
+}
+function renderSiteTable(){
+  const el = document.getElementById('ovSiteTable');
+  const order = SITE_ORDER.filter(s=>D.siteCount[s]);
+  const total = D.totalCases;
+  let h = `<table class="tbl"><thead><tr><th>${t('th_site')}</th><th class="num">${t('th_n')}</th><th class="num">${t('th_pct')}</th></tr></thead><tbody>`;
+  order.sort((a,b)=>D.siteCount[b]-D.siteCount[a]).forEach(s=>{
+    const c=D.siteCount[s], pct=Math.round(c/total*100);
+    h+=`<tr><td><i class="${SITE_INFO[s].icon}" style="color:${SITE_INFO[s].color};width:18px;"></i> ${siteName(s)}</td>
+      <td class="num bar-cell"><span>${c}</span><div class="bar" style="width:${c/total*100}%"></div></td>
+      <td class="num">${pct}%</td></tr>`;
+  });
+  h+=`<tr class="total"><td>${t('row_total')}</td><td class="num">${total}</td><td class="num">100%</td></tr>`;
+  h+='</tbody></table>';
+  el.innerHTML=h;
+  document.getElementById('ovDistNote').textContent = `n = ${total}`;
+}
+function renderPipeline(){
+  const P=T().pipe;
+  document.getElementById('ovPipeline').innerHTML =
+    `<div class="pipeline">${P.map((p,i)=>`
+      <div class="pipe"><span class="pms">&lt;1 ${t('pms')}</span>
+        <div class="pn">0${i+1}</div><div class="pt">${p.t}</div><div class="pd">${p.d}</div></div>`).join('')}</div>`;
+}
+function renderImpact(){
+  const IM=T().impact;
+  document.getElementById('ovImpact').innerHTML = IM.map(r=>`
+    <div style="padding:11px 0; border-bottom:1px solid var(--line2);">
+      <div style="font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600;">${r.b}</div>
+      <div style="display:flex; align-items:center; gap:9px; margin-top:5px; font-size:.86rem;">
+        <span style="color:var(--muted);">${t('impact_before')}</span>
+        <i class="fas fa-arrow-right-long" style="color:var(--sage);"></i>
+        <b style="color:var(--teal);">${r.a}</b></div></div>`).join('');
+}
+function renderAlerts(){
+  const el=document.getElementById('dbAlerts');
+  let h = `<div class="alert-empty"><i class="fas fa-shield-check"></i><div>
+    <div style="font-weight:700;">${t('alert_clear_t')}</div>
+    <div style="font-size:.78rem; font-weight:400; margin-top:2px; color:#1c6d61;">${t('alert_clear_m')}</div></div></div>`;
+  h += `<div class="alert warn" style="margin-top:10px;"><i class="fas fa-circle-info"></i><div>
+    <div class="a-t">${t('alert_info_t')}</div><div class="a-m">${t('alert_info_m')}</div></div></div>`;
+  el.innerHTML=h;
+}
+function renderQtrTable(){
+  const el=document.getElementById('qtrTable');
+  const q2m=[[1,3],[4,6],[7,9],[10,12],[13,15],[16,18],[19,21],[22,24]];
+  const qlabels=["'24 Q3","'24 Q4","'25 Q1","'25 Q2","'25 Q3","'25 Q4","'26 Q1","'26 Q2"];
+  let h=`<thead><tr><th>${t('th_period')}</th><th class="num">${t('th_cases')}</th>
+    <th class="num">${t('th_pd')}</th><th class="num">${t('th_density')}</th>
+    <th class="num">${t('th_cauti_n')}</th><th class="num">${t('th_cd')}</th>
+    <th class="num">${t('th_cauti_d')}</th></tr></thead><tbody>`;
+  q2m.forEach((rg,qi)=>{
+    let cs=0,pd=0,cd=0,cu=0;
+    for(let m=rg[0];m<=rg[1];m++){ cs+=D.counts[m-1]; pd+=DENOM.residentDays[m-1];
+      cd+=DENOM.catheterDays[m-1]; cu+=D.cautiByMonth[m-1]; }
+    const den= pd>0? round2(cs/pd*1000):'–';
+    const cden= cd>0? round2(cu/cd*1000):'–';
+    h+=`<tr><td>${qlabels[qi]}</td><td class="num">${cs}</td><td class="num">${pd.toLocaleString()}</td>
+      <td class="num">${den}</td><td class="num">${cu}</td><td class="num">${cd.toLocaleString()}</td>
+      <td class="num">${cden}</td></tr>`;
+  });
+  h+=`<tr class="total"><td>${t('row_total')}</td><td class="num">${D.totalCases}</td>
+    <td class="num">${D.totalPD.toLocaleString()}</td><td class="num">${D.overallRate}</td>
+    <td class="num">${D.cautiTotal}</td><td class="num">${D.totalCD.toLocaleString()}</td>
+    <td class="num">${D.cautiRate}</td></tr></tbody>`;
+  el.innerHTML=h;
+}
+function renderNelsonBox(){
+  const el=document.getElementById('nelsonBox');
+  el.innerHTML = `<b><i class="fas fa-circle-check ok"></i> ${t('spc_incontrol')}.</b> ${t('nelson_none')}`;
+  const v=document.getElementById('spcVerdict');
+  v.className = 'spc-verdict'+(ANY_VIOLATION?' warn':'');
+  v.querySelector('span:last-child').textContent = t('spc_incontrol');
+  document.getElementById('dbOrgNote').textContent = Object.keys(D.orgCount).length + ' / ' + D.totalCases;
+}
+function renderLogicCards(){
+  const L=T().logic; const cls=['t-threshold','t-single','t-combo','t-exclusion'];
+  const badge=['lb-threshold','lb-single','lb-combo','lb-exclusion'];
+  document.getElementById('logicCards').innerHTML = L.map((l,i)=>`
+    <div class="logic-card ${cls[i]}">
+      <div class="lc-h"><span class="lc-num">0${i+1}</span>
+        <span class="logic-badge ${badge[i]}">${l.tag}</span></div>
+      <div class="lc-d">${l.d}</div>
+      <div class="lc-ex"><b>${t('nav_adjudication')}:</b> ${l.ex}<br><span class="formula">${l.f}</span></div>
+    </div>`).join('');
+}
+function renderNelsonList(){
+  const N=T().nelson;
+  document.getElementById('nelsonList').innerHTML =
+    `<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 22px;">${N.map((r,i)=>`
+      <div style="display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line2);">
+        <span style="flex-shrink:0; width:24px;height:24px;border-radius:7px; background:var(--sage-soft);
+          color:var(--sage); font-weight:700; font-size:.74rem; display:flex; align-items:center; justify-content:center;">${i+1}</span>
+        <div style="flex:1;"><div style="font-size:.82rem; line-height:1.4;">${r}</div>
+          <div style="font-size:.7rem; color:var(--sage); font-weight:650; margin-top:2px;">
+            <i class="fas fa-check"></i> ${t('nelson_status_ok')}</div></div></div>`).join('')}</div>`;
+}
+
+/* ===================== wizard ===================== */
+const SITES = {
+  resp :{enabled:true,  path:'pneumonia', sub:'1c'},
+  uri  :{enabled:true,  path:'cauti',     sub:'2a'},
+  gi   :{enabled:false},
+  eent :{enabled:false},
+  skin :{enabled:true,  path:'skin',      sub:'5a'},
+  blood:{enabled:false},
+  fever:{enabled:false}
+};
+const ORG_LIST = ['E. coli','K. pneumoniae','P. mirabilis','Pseudomonas spp.','Klebsiella spp.','S. aureus','Enterococcus spp.'];
+const RESTART_LBL = {en:'New case', zh:'重新收案', ja:'新規症例', ko:'새 증례'};
+let WZ = {step:1, resident:null, site:null, pass:false, sub:null, matched:0, need:0, single:false};
+
+function buildResidentSelect(){
+  const sel=document.getElementById('s1Resident');
+  const cur=WZ.resident;
+  sel.innerHTML = `<option value="">${t('s1_placeholder')}</option>` +
+    Object.keys(RESIDENTS).map(id=>{
+      const r=RESIDENTS[id];
+      return `<option value="${id}"${id===cur?' selected':''}>${id.replace('R','R-')} · ${r.age} · ${r.sex}</option>`;
+    }).join('');
+  sel.onchange = ()=>{ WZ.resident = sel.value||null; renderResidentCard(); };
+}
+function renderResidentCard(){
+  const card=document.getElementById('s1Card');
+  if(!WZ.resident){ card.style.display='none'; return; }
+  const r=RESIDENTS[WZ.resident];
+  const cath=CATHETER_RES.has(WZ.resident);
+  card.style.display='grid';
+  card.innerHTML =
+    `<div class="rc"><div class="rl">${t('rc_id')}</div><div class="rv">${WZ.resident.replace('R','R-')}</div></div>
+     <div class="rc"><div class="rl">${t('rc_age')}</div><div class="rv">${r.age}</div></div>
+     <div class="rc"><div class="rl">${t('rc_sex')}</div><div class="rv">${r.sex}</div></div>
+     <div class="rc"><div class="rl">${t('rc_tubes')}</div><div class="rv">${cath?'Foley':t('rc_none')}</div></div>`;
+}
+function buildOrgSelect(){
+  const sel=document.getElementById('s4Org');
+  sel.innerHTML = `<option value="">${t('opt_none')}</option>` +
+    ORG_LIST.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+function renderSiteGrid(){
+  const grid=document.getElementById('siteGrid');
+  grid.innerHTML = SITE_ORDER.map(s=>{
+    const cfg=SITES[s], on=cfg.enabled, selCls = WZ.site===s?' sel':'';
+    const tag = on ? `<span class="demo-tag">${t('demo_tag')}</span>`
+                   : `<span class="demo-tag" style="color:var(--muted);background:#eef1f2;">${t('full_tag')}</span>`;
+    return `<div class="site${on?'':' disabled'}${selCls}" data-site="${s}">
+      ${tag}<div class="ic" style="color:${SITE_INFO[s].color}"><i class="${SITE_INFO[s].icon}"></i></div>
+      <div class="nm">${siteName(s)}</div></div>`;
+  }).join('');
+  grid.querySelectorAll('.site').forEach(el=>{
+    if(el.classList.contains('disabled')) return;
+    el.onclick = ()=>{ WZ.site = el.dataset.site; renderSiteGrid(); };
+  });
+}
+function renderSteps(){
+  const labels=T().step_labels;
+  let h='';
+  for(let i=1;i<=5;i++){
+    const cls = i<WZ.step?'done':(i===WZ.step?'active':'');
+    h+=`<div class="step ${cls}"><div class="circle">${i<WZ.step?'<i class=\"fas fa-check\"></i>':i}</div>
+        <div class="lbl">${labels[i-1]}</div></div>`;
+    if(i<5) h+=`<div class="step-line ${i<WZ.step?'done':''}"></div>`;
+  }
+  document.getElementById('steps').innerHTML=h;
+}
+function checkRow(cls,i,label){
+  return `<label class="check"><input type="checkbox" class="${cls}" data-i="${i}"><span>${label}</span></label>`;
+}
+function buildJudge(){
+  const area=document.getElementById('judgeArea');
+  if(!WZ.site || !SITES[WZ.site].enabled){ area.innerHTML=`<div class="verdict fail"><i class="fas fa-triangle-exclamation"></i><div><div class="vt">${t('choose_site_first')}</div></div></div>`; return; }
+  const path=SITES[WZ.site].path;
+  let h='';
+  if(path==='pneumonia'){
+    h=`<div class="criteria"><h4><span class="logic-badge lb-threshold">${T().logic[0].tag}</span> &nbsp;<span class="logic-badge lb-exclusion">${T().logic[3].tag}</span></h4>
+      <div class="hint">${t('judge_pneu_hint')}</div>
+      <div class="gate"><div class="q"><i class="fas fa-x-ray"></i> ${t('gate_pneu_q')}</div>
+        <div class="radios"><label><input type="radio" name="pneuGate" value="yes"> ${t('opt_yes')}</label>
+          <label><input type="radio" name="pneuGate" value="no" checked> ${t('opt_no')}</label></div></div>
+      ${T().c_pneu.map((c,i)=>checkRow('pneu-c',i,c)).join('')}
+      <div class="exclusion-box"><label class="check" style="margin:0;"><input type="checkbox" id="pneuExcl"><span><b>${T().logic[3].tag}:</b> ${t('c_pneu_excl')}</span></label></div>
+      </div>`;
+  } else if(path==='cauti'){
+    const cath=CATHETER_RES.has(WZ.resident);
+    h=`<div class="criteria"><h4><span class="logic-badge lb-threshold">${T().logic[0].tag}</span></h4>
+      <div class="hint">${t('judge_cauti_hint')}</div>
+      <div class="gate" style="background:${cath?'var(--sage-soft)':'var(--coral-soft)'};border-color:${cath?'#bfe4dc':'#f1c3ba'};">
+        <div class="q" style="color:${cath?'#1c6d61':'#a23924'};">
+          <i class="fas fa-${cath?'circle-check':'circle-xmark'}"></i> ${cath?t('cauti_gate_yes'):t('cauti_gate_no')}</div></div>
+      ${cath?T().c_cauti.map((c,i)=>checkRow('cauti-c',i,c)).join(''):''}
+      </div>`;
+  } else if(path==='skin'){
+    h=`<div class="criteria"><h4><span class="logic-badge lb-single">${T().logic[1].tag}</span> &nbsp;<span class="logic-badge lb-combo">${T().logic[2].tag}</span></h4>
+      <div class="hint">${t('judge_skin_hint')}</div>
+      <div class="exclusion-box" style="background:var(--sage-soft);border-color:#bfe4dc;margin-top:0;margin-bottom:12px;">
+        <label class="check" style="margin:0;"><input type="checkbox" id="skinPus"><span><b>${T().logic[1].tag}:</b> ${t('c_skin_pus')}</span></label></div>
+      <div class="hint" style="margin-bottom:8px;">${t('c_skin_or')}</div>
+      ${T().c_skin.map((c,i)=>checkRow('skin-c',i,c)).join('')}
+      </div>`;
+  }
+  h+=`<div id="wzVerdict"></div>`;
+  area.innerHTML=h;
+  area.oninput = evaluate;
+  evaluate();
+}
+function evaluate(){
+  const path = WZ.site? SITES[WZ.site].path : null;
+  let pass=false, matched=0, need=0, single=false, gateOk=true;
+  if(path==='pneumonia'){
+    const gate=(document.querySelector('input[name="pneuGate"]:checked')||{}).value==='yes';
+    const excl=document.getElementById('pneuExcl') && document.getElementById('pneuExcl').checked;
+    matched=document.querySelectorAll('.pneu-c:checked').length; need=2;
+    gateOk=gate; pass = gate && excl && matched>=2;
+  } else if(path==='cauti'){
+    const cath=CATHETER_RES.has(WZ.resident);
+    matched=document.querySelectorAll('.cauti-c:checked').length; need=2;
+    gateOk=cath; pass = cath && matched>=2;
+  } else if(path==='skin'){
+    const pus=document.getElementById('skinPus') && document.getElementById('skinPus').checked;
+    matched=document.querySelectorAll('.skin-c:checked').length; need=4;
+    if(pus){ pass=true; single=true; } else pass = matched>=4;
+  }
+  WZ.pass=pass; WZ.matched=matched; WZ.need=need; WZ.single=single; WZ.sub=SITES[WZ.site].sub;
+  const vb=document.getElementById('wzVerdict');
+  if(vb){
+    if(pass){
+      vb.className=''; vb.innerHTML=`<div class="verdict pass"><i class="fas fa-circle-check"></i>
+        <div><div class="vt">${t('verdict_pass_t')}</div>
+        <div class="vm">${single? t('verdict_pus') : `${matched} ${t('verdict_count')} · ≥${need} ${t('verdict_need')}`}</div></div></div>`;
+    } else {
+      vb.innerHTML=`<div class="verdict fail"><i class="fas fa-hourglass-half"></i>
+        <div><div class="vt">${t('verdict_fail_t')}</div>
+        <div class="vm">${gateOk? `${matched} / ${need} ${t('verdict_need')}` : t('need_pass')}</div></div></div>`;
+    }
+  }
+  const bn=document.getElementById('btnNext');
+  if(WZ.step===3) bn.disabled = !pass;
+}
+function buildResult(){
+  const area=document.getElementById('resultArea');
+  const site=WZ.site, path=SITES[site].path;
+  const mKey = site==='resp'?'m_resp': site==='uri'?'m_uri':'m_skin';
+  const measures=T()[mKey];
+  let ruleTxt='';
+  if(path==='pneumonia') ruleTxt=`${t('judge_pneu_h')} — ${WZ.matched}/6 ${t('verdict_count')}, ≥2 ${t('verdict_need')} · ${T().logic[3].tag}`;
+  else if(path==='cauti') ruleTxt=`${t('judge_cauti_h')} — ${WZ.matched}/4 ${t('verdict_count')}, ≥2 ${t('verdict_need')}`;
+  else ruleTxt = WZ.single? t('verdict_pus') : `${t('judge_skin_h')} — ${WZ.matched}/6 ${t('verdict_count')}, ≥4 ${t('verdict_need')}`;
+  const org=document.getElementById('s4Org').value;
+  const res=document.getElementById('s4Res').value;
+  const abx=document.getElementById('s4Abx').value;
+  area.innerHTML=`
+    <div class="verdict pass"><i class="fas fa-circle-check"></i>
+      <div><div class="vt">${t('verdict_pass_t')} · ${siteName(site)} / ${subName(WZ.sub)}</div>
+      <div class="vm"><b>${t('verdict_via')}</b> ${ruleTxt}</div></div></div>
+    <div class="resident-card" style="margin-top:14px;">
+      <div class="rc"><div class="rl">${t('rc_id')}</div><div class="rv">${WZ.resident.replace('R','R-')}</div></div>
+      <div class="rc"><div class="rl">${t('s4_org')}</div><div class="rv" style="font-style:italic;">${org||t('opt_none')}</div></div>
+      <div class="rc"><div class="rl">${t('s4_res')}</div><div class="rv">${res==='none'?t('opt_none'):res}</div></div>
+      <div class="rc"><div class="rl">${t('s4_abx')}</div><div class="rv">${abx==='yes'?t('opt_yes'):t('opt_no')}</div></div>
+    </div>
+    <div class="measures"><div class="mh"><i class="fas fa-list-check"></i> ${t('measures_h')} · 60×20</div>
+      <ul>${measures.map(m=>`<li>${m}</li>`).join('')}</ul></div>`;
+}
+function showStep(n){
+  WZ.step=n;
+  for(let i=1;i<=5;i++) document.getElementById('wz'+i).style.display = i===n?'block':'none';
+  document.getElementById('btnPrev').style.visibility = n===1?'hidden':'visible';
+  const bn=document.getElementById('btnNext');
+  bn.disabled=false;
+  if(n===5) bn.innerHTML = `<i class="fas fa-rotate-right"></i> ${RESTART_LBL[LANG]}`;
+  else bn.innerHTML = `<span>${t('btn_next')}</span><i class="fas fa-arrow-right"></i>`;
+  renderSteps();
+  if(n===3) buildJudge();
+  if(n===5) buildResult();
+}
+function wzNext(){
+  const n=WZ.step;
+  if(n===1){ if(!WZ.resident){ renderResidentCard(); document.getElementById('s1Resident').focus(); return;} showStep(2); }
+  else if(n===2){ if(!WZ.site) return; showStep(3); }
+  else if(n===3){ evaluate(); if(!WZ.pass) return; showStep(4); }
+  else if(n===4){ showStep(5); }
+  else if(n===5){ resetWizard(); }
+}
+function wzPrev(){ if(WZ.step>1) showStep(WZ.step-1); }
+function resetWizard(){
+  WZ={step:1, resident:null, site:null, pass:false, sub:null, matched:0, need:0, single:false};
+  buildResidentSelect(); renderResidentCard(); renderSiteGrid();
+  document.getElementById('s4Res').value='none'; document.getElementById('s4Abx').value='yes';
+  document.getElementById('s4Org').value=''; document.getElementById('s4Spec').value='';
+  showStep(1);
+}
+
+/* ===================== render all + charts ===================== */
+function drawAllCharts(){
+  drawHeroSpark();
+  drawDoughnut('ovSiteChart', D.siteCount, SITE_ORDER);
+  drawTrend(); drawAge(); drawOrg();
+  drawControl('cChart', cChartData(), false);
+  drawControl('uChart', uChartData(D.counts, DENOM.residentDays, D.totalCases, D.totalPD), true);
+  drawControl('cauChart', uChartData(D.cautiByMonth, DENOM.catheterDays, D.cautiTotal, D.totalCD), true);
+}
+function renderAll(){
+  renderOverviewKpis(); renderSiteTable(); renderPipeline(); renderImpact();
+  renderDashKpis(); renderAlerts(); renderQtrTable(); renderNelsonBox();
+  renderLogicCards(); renderNelsonList();
+  drawAllCharts();
+}
+
+/* ===================== language & tabs ===================== */
+function applyLang(lang){
+  LANG=lang;
+  document.documentElement.lang = langCode[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n'); const v=I18N[lang][k];
+    if(typeof v==='string') el.textContent=v;
+  });
+  document.querySelectorAll('#langbar button').forEach(b=>b.classList.toggle('on', b.dataset.lang===lang));
+  buildResidentSelect(); renderResidentCard(); buildOrgSelect(); renderSiteGrid();
+  renderAll();
+  showStep(WZ.step);
+}
+function switchTab(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on', p.id==='page-'+name));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.tab===name));
+  requestAnimationFrame(()=>{ Object.values(CH).forEach(c=>{ try{c.resize();}catch(e){} }); });
+}
+
+/* ===================== init ===================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('langbar').querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>applyLang(b.dataset.lang);
+  });
+  document.getElementById('nav').querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>switchTab(b.dataset.tab);
+  });
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('s1Date').value=today;
+  document.getElementById('heroRate').textContent = D.overallRate;
+  applyLang('en');
+  showStep(1);
+});
+</script>
+</body>
+</html>
